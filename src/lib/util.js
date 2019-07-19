@@ -34,7 +34,7 @@ export function Timer(_every, _title) {
     }
     this.add = name => {
         var t = performance.now()
-        if (names.indexOf(name) < 0) names.push(name)
+        if (!names.includes(name)) names.push(name)
         var i = names.indexOf(name)
         if (!times[i]) times[i] = 0
         times[i] += t - last
@@ -43,8 +43,8 @@ export function Timer(_every, _title) {
     this.report = () => {
         total += performance.now() - started
         if (iter === every) {
-            var head = title + ' total ' + (total / every).toFixed(2) + 'ms (avg, ' + every + ' runs)    '
-            console.log(head, names.map((name, i) => name + ': ' + (times[i] / every).toFixed(2) + 'ms    ').join(''))
+            var head = `${title} total ${(total / every).toFixed(2)}ms (avg, ${every} runs)    `
+            console.log(head, names.map((name, i) => `${name}: ${(times[i] / every).toFixed(2)}ms    `).join(''))
             clearNext = true
             iter = 0
             total = 0

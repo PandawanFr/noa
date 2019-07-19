@@ -9,7 +9,7 @@ import pkg from '../package.json'
 import vec3 from 'gl-vec3'
 
 import ndarray from 'ndarray'
-import {EventEmitter} from 'events'
+import { EventEmitter } from 'events'
 import Container from './lib/container'
 import Rendering from './lib/rendering'
 import World from './lib/world'
@@ -110,12 +110,12 @@ export default class Engine extends EventEmitter {
 
         /**
          * block/item property registry
-         */  
+         */
         this.registry = new Registry(this, opts)
 
         /**
          * world manager
-         */  
+         */
         this.world = new World(this, opts)
 
         /**
@@ -136,7 +136,7 @@ export default class Engine extends EventEmitter {
          * physics engine - solves collisions, properties, etc.
          */
         this.physics = createPhysics(this, opts)
-        
+
         /**
          * Manages camera, view angle, etc.
          */
@@ -435,7 +435,7 @@ function debugQueues(self) {
     }
     if (!__qwasDone && a + b + c === 0) {
         __qwasDone = true
-        console.log('Queue empty after ' + Math.round(performance.now() - __qstart) + 'ms')
+        console.log(`Queue empty after ${Math.round(performance.now() - __qstart)}ms`)
     }
 }
 
@@ -476,10 +476,10 @@ function updateBlockTargets(noa) {
             dat.position[i] = p
             dat.normal[i] = n
             dat.adjacent[i] = p + n
-            newhash += '|' + p + '|' + n
+            newhash += `|${p}|${n}`
         }
         dat.blockID = noa.world.getBlockID(dat.position[0], dat.position[1], dat.position[2])
-        newhash += '|' + result.blockID
+        newhash += `|${result.blockID}`
         noa.targetedBlock = dat
     } else {
         noa.targetedBlock = null

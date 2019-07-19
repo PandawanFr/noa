@@ -19,11 +19,11 @@ var PROFILE = 0
  */
 
 
-class TerrainMesher {
-    constructor() {
-    this.greedyMesher = new GreedyMesher()
-    this.meshBuilder = new MeshBuilder()
-    }
+function TerrainMesher() {
+
+    var greedyMesher = new GreedyMesher()
+    var meshBuilder = new MeshBuilder()
+
 
     /*
      * 
@@ -31,7 +31,7 @@ class TerrainMesher {
      * 
      */
 
-    meshChunk(chunk, matGetter, colGetter, ignoreMaterials, useAO, aoVals, revAoVal) {
+    this.meshChunk = (chunk, matGetter, colGetter, ignoreMaterials, useAO, aoVals, revAoVal) => {
         profile_hook('start')
         var noa = chunk.noa
 
@@ -44,12 +44,12 @@ class TerrainMesher {
         var rev = isNaN(revAoVal) ? noa.rendering.revAoVal : revAoVal
 
         // greedy mesher creates an array of Submesh structs
-        var subMeshes = this.greedyMesher.mesh(array, mats, cols, ao, vals, rev)
+        var subMeshes = greedyMesher.mesh(array, mats, cols, ao, vals, rev)
 
         // builds the babylon mesh that will be added to the scene
         var mesh
         if (Object.keys(subMeshes).length) {
-            mesh = this.meshBuilder.build(chunk, subMeshes, ignoreMaterials)
+            mesh = meshBuilder.build(chunk, subMeshes, ignoreMaterials)
             profile_hook('built terrain')
         }
 
@@ -103,34 +103,33 @@ class Submesh {
  * 
  */
 
-class MeshBuilder {
-    constructor() {
-        this.noa = undefined
-        this.materialCache = {}
-    }
+function MeshBuilder() {
+
+    var noa
+
 
     // core
-    build(chunk, meshdata, ignoreMaterials){
-        this.noa = chunk.noa
+    this.build = (chunk, meshdata, ignoreMaterials) => {
+        noa = chunk.noa
 
         // preprocess meshdata entries to merge those that will use default terrain material
         var mergeCriteria = mdat => {
             if (ignoreMaterials) return true
             if (mdat.renderMat) return false
-            var url = this.noa.registry.getMaterialTexture(mdat.id)
-            var alpha = this.noa.registry.getMaterialData(mdat.id).alpha
+            var url = noa.registry.getMaterialTexture(mdat.id)
+            var alpha = noa.registry.getMaterialData(mdat.id).alpha
             if (url || alpha < 1) return false
         }
-        this.mergeSubmeshes(meshdata, mergeCriteria)
+        mergeSubmeshes(meshdata, mergeCriteria)
 
         // now merge everything, keeping track of vertices/indices/materials
-        var results = this.mergeSubmeshes(meshdata, () => true)
+        var results = mergeSubmeshes(meshdata, () => true)
 
         // merge sole remaining submesh instance into a babylon mesh
         var mdat = meshdata[results.mergedID]
-        var name = 'chunk_' + chunk.id
-        var mats = results.matIDs.map(id => this.getTerrainMaterial(id, ignoreMaterials))
-        var mesh = this.buildMeshFromSubmesh(mdat, name, mats, results.vertices, results.indices)
+        var name = `chunk_${chunk.id}`
+        var mats = results.matIDs.map(id => getTerrainMaterial(id, ignoreMaterials))
+        var mesh = buildMeshFromSubmesh(mdat, name, mats, results.vertices, results.indices)
 
         // position, freeze and exit
         var x = chunk.i * chunk.size
@@ -150,18 +149,18 @@ class MeshBuilder {
     // this version builds a parent mesh + child meshes, rather than
     // one big mesh with submeshes and a multimaterial.
     // This should be obsolete, unless the first one has problems..
-    buildWithoutMultimats(chunk, meshdata, ignoreMaterials) {
-        this.noa = chunk.noa
+    this.buildWithoutMultimats = (chunk, meshdata, ignoreMaterials) => {
+        noa = chunk.noa
 
         // preprocess meshdata entries to merge those that use default terrain material
         var mergeCriteria = mdat => {
             if (ignoreMaterials) return true
             if (mdat.renderMat) return false
-            var url = this.noa.registry.getMaterialTexture(mdat.id)
-            var alpha = this.noa.registry.getMaterialData(mdat.id).alpha
+            var url = noa.registry.getMaterialTexture(mdat.id)
+            var alpha = noa.registry.getMaterialData(mdat.id).alpha
             if (url || alpha < 1) return false
         }
-        this.mergeSubmeshes(meshdata, mergeCriteria)
+        mergeSubmeshes(meshdata, mergeCriteria)
 
         // go through (remaining) meshdata entries and create a mesh for each
         // call the first one the parent, and attach others to it
@@ -170,9 +169,9 @@ class MeshBuilder {
         for (var i = 0; i < keylist.length; ++i) {
             var mdat = meshdata[keylist[i]]
             var matID = mdat.id
-            var mat = this.getTerrainMaterial(matID, ignoreMaterials)
-            var name = 'chunk_inner_' + chunk.id + ' ' + matID
-            var mesh = this.buildMeshFromSubmesh(mdat, name, [mat])
+            var mat = getTerrainMaterial(matID, ignoreMaterials)
+            var name = `chunk_inner_${chunk.id} ${matID}`
+            var mesh = buildMeshFromSubmesh(mdat, name, [mat])
 
             if (!parent) {
                 parent = mesh
@@ -199,7 +198,7 @@ class MeshBuilder {
     // given a set of submesh objects, merge all those that 
     // meet some criteria into the first such submesh
     //      modifies meshDataList in place!
-    mergeSubmeshes(meshDataList, criteria) {
+    function mergeSubmeshes(meshDataList, criteria) {
         var vertices = []
         var indices = []
         var matIDs = []
@@ -246,10 +245,10 @@ class MeshBuilder {
 
 
 
-    buildMeshFromSubmesh(submesh, name, mats, verts, inds) {
+    function buildMeshFromSubmesh(submesh, name, mats, verts, inds) {
 
         // base mesh and vertexData object
-        var scene = this.noa.rendering.getScene()
+        var scene = noa.rendering.getScene()
         var mesh = new BABYLON.Mesh(name, scene)
         var vdat = new BABYLON.VertexData()
         vdat.positions = submesh.positions
@@ -266,7 +265,7 @@ class MeshBuilder {
 
         } else {
             // else we need to make a multimaterial and define (babylon) submeshes
-            var multiMat = new BABYLON.MultiMaterial('multimat ' + name, scene)
+            var multiMat = new BABYLON.MultiMaterial(`multimat ${name}`, scene)
             mesh.subMeshes = []
             // var totalVerts = vdat.positions.length
             // var totalInds = vdat.indices.length
@@ -290,30 +289,33 @@ class MeshBuilder {
 
     //                         Material wrangling
 
+
+    var materialCache = {}
+
     // manage materials/textures to avoid duplicating them
-    getTerrainMaterial(matID, ignore) {
-        if (ignore) return this.noa.rendering.flatMaterial
-        var name = 'terrain mat ' + matID
-        if (!this.materialCache[name]) this.materialCache[name] = this.makeTerrainMaterial(matID)
-        return this.materialCache[name]
+    function getTerrainMaterial(matID, ignore) {
+        if (ignore) return noa.rendering.flatMaterial
+        var name = `terrain mat ${matID}`
+        if (!materialCache[name]) materialCache[name] = makeTerrainMaterial(matID)
+        return materialCache[name]
     }
 
 
     // canonical function to make a terrain material
-    makeTerrainMaterial(id) {
+    function makeTerrainMaterial(id) {
         // if user-specified render material is defined, use it
-        var matData = this.noa.registry.getMaterialData(id)
+        var matData = noa.registry.getMaterialData(id)
         if (matData.renderMat) return matData.renderMat
         // otherwise determine which built-in material to use
-        var url = this.noa.registry.getMaterialTexture(id)
+        var url = noa.registry.getMaterialTexture(id)
         var alpha = matData.alpha
         if (!url && alpha == 1) {
             // base material is fine for non-textured case, if no alpha
-            return this.noa.rendering.flatMaterial
+            return noa.rendering.flatMaterial
         }
-        var mat = this.noa.rendering.flatMaterial.clone('terrain' + id)
+        var mat = noa.rendering.flatMaterial.clone(`terrain${id}`)
         if (url) {
-            var scene = this.noa.rendering.getScene()
+            var scene = noa.rendering.getScene()
             var tex = new BABYLON.Texture(url, scene, true, false, BABYLON.Texture.NEAREST_SAMPLINGMODE)
             if (matData.textureAlpha) tex.hasAlpha = true
             mat.diffuseTexture = tex
@@ -363,19 +365,25 @@ class MeshBuilder {
  *        }
  */
 
-class GreedyMesher {
-    constructor() {
+function GreedyMesher() {
 
     // data representation constants
-    this.constants = Constants
-    this.maskCache = new Int16Array(16)
-    this.aomaskCache = new Uint16Array(16)
+    var constants = Constants
 
-    }
+    var ID_MASK = constants.ID_MASK
+    // var VAR_MASK = constants.VAR_MASK // NYI
+    var SOLID_BIT = constants.SOLID_BIT
+    var OPAQUE_BIT = constants.OPAQUE_BIT
+    var OBJECT_BIT = constants.OBJECT_BIT
+
+
+    var maskCache = new Int16Array(16)
+    var aomaskCache = new Uint16Array(16)
 
 
 
-    mesh(arr, getMaterial, getColor, doAO, aoValues, revAoVal) {
+
+    this.mesh = (arr, getMaterial, getColor, doAO, aoValues, revAoVal) => {
 
         // return object, holder for Submeshes
         var subMeshes = {}
@@ -383,7 +391,7 @@ class GreedyMesher {
         // precalc how to apply AO packing in first masking function
         var skipReverseAO = (doAO && (revAoVal === aoValues[0]))
         var aoPackFcn
-        if (doAO) aoPackFcn = (skipReverseAO) ? this.packAOMaskNoReverse : this.packAOMask
+        if (doAO) aoPackFcn = (skipReverseAO) ? packAOMaskNoReverse : packAOMask
 
 
         //Sweep over each axis, mapping axes to [d,u,v]
@@ -400,20 +408,20 @@ class GreedyMesher {
             var len2 = arrT.shape[2]
 
             // create bigger mask arrays as needed
-            if (this.maskCache.length < len1 * len2) {
-                this.maskCache = new Int16Array(len1 * len2)
-                this.aomaskCache = new Uint16Array(len1 * len2)
+            if (maskCache.length < len1 * len2) {
+                maskCache = new Int16Array(len1 * len2)
+                aomaskCache = new Uint16Array(len1 * len2)
             }
 
             // iterate along current major axis..
             for (var i = 0; i <= len0; ++i) {
 
                 // fills mask and aomask arrays with values
-                this.constructMeshMasks(i, d, arrT, getMaterial, aoPackFcn)
+                constructMeshMasks(i, d, arrT, getMaterial, aoPackFcn)
                 profile_hook('built masks')
 
                 // parses the masks to do greedy meshing
-                this.constructMeshDataFromMasks(i, d, u, v, len1, len2,
+                constructMeshDataFromMasks(i, d, u, v, len1, len2,
                     doAO, subMeshes, getColor, aoValues, revAoVal)
 
                 profile_hook('build submeshes')
@@ -434,10 +442,10 @@ class GreedyMesher {
     //
     // iterating across ith 2d plane, with n being index into masks
 
-    constructMeshMasks(i, d, arrT, getMaterial, aoPackFcn) {
+    function constructMeshMasks(i, d, arrT, getMaterial, aoPackFcn) {
         var len = arrT.shape[1]
-        var mask = this.maskCache
-        var aomask = this.aomaskCache
+        var mask = maskCache
+        var aomask = aomaskCache
         // set up for quick array traversals
         var n = 0
         var data = arrT.data
@@ -458,12 +466,12 @@ class GreedyMesher {
                 var id0 = data[d0]
                 var id1 = data[d0 + istride]
 
-                var faceDir = this.getFaceDir(id0, id1)
+                var faceDir = getFaceDir(id0, id1)
                 if (faceDir) {
                     // set regular mask value to material ID, sign indicating direction
                     mask[n] = (faceDir > 0) ?
-                        getMaterial(id0 & this.constants.ID_MASK, d * 2) :
-                        -getMaterial(id1 & this.constants.ID_MASK, d * 2 + 1)
+                        getMaterial(id0 & ID_MASK, d * 2) :
+                        -getMaterial(id1 & ID_MASK, d * 2 + 1)
 
                     // if doing AO, precalculate AO level for each face into second mask
                     if (aoPackFcn) {
@@ -485,18 +493,18 @@ class GreedyMesher {
 
 
 
-    getFaceDir(id0, id1) {
+    function getFaceDir(id0, id1) {
         // no face if both blocks are opaque, or if ids match
         if (id0 === id1) return 0
-        var op0 = id0 & this.constants.OPAQUE_BIT
-        var op1 = id1 & this.constants.OPAQUE_BIT
+        var op0 = id0 & OPAQUE_BIT
+        var op1 = id1 & OPAQUE_BIT
         if (op0 && op1) return 0
         // if either block is opaque draw a face for it
         if (op0) return 1
         if (op1) return -1
         // if one block is air or an object block draw face for the other
-        if (id1 === 0 || (id1 & this.constants.OBJECT_BIT)) return 1
-        if (id0 === 0 || (id0 & this.constants.OBJECT_BIT)) return -1
+        if (id1 === 0 || (id1 & OBJECT_BIT)) return 1
+        if (id0 === 0 || (id0 & OBJECT_BIT)) return -1
         // only remaining case is two different non-opaque non-air blocks that are adjacent
         // really we should draw both faces here; draw neither for now
         return 0
@@ -512,16 +520,16 @@ class GreedyMesher {
     //
     // construct data for mesh using the masks
 
-    constructMeshDataFromMasks(i, d, u, v, len1, len2,
+    function constructMeshDataFromMasks(i, d, u, v, len1, len2,
         doAO, submeshes, getColor, aoValues, revAoVal) {
         var n = 0
-        var mask = this.maskCache
-        var aomask = this.aomaskCache
+        var mask = maskCache
+        var aomask = aomaskCache
 
         // some logic is broken into helper functions for AO and non-AO
         // this fixes deopts in Chrome (for reasons unknown)
-        var maskCompareFcn = (doAO) ? this.maskCompare : this.maskCompare_noAO
-        var meshColorFcn = (doAO) ? this.pushMeshColors : this.pushMeshColors_noAO
+        var maskCompareFcn = (doAO) ? maskCompare : maskCompare_noAO
+        var meshColorFcn = (doAO) ? pushMeshColors : pushMeshColors_noAO
 
         for (var k = 0; k < len2; ++k) {
             var w = 1
@@ -648,18 +656,18 @@ class GreedyMesher {
 
     // Two helper functions with AO and non-AO implementations:
 
-    maskCompare(index, mask, maskVal, aomask, aoVal) {
+    function maskCompare(index, mask, maskVal, aomask, aoVal) {
         if (maskVal !== mask[index]) return false
         if (aoVal !== aomask[index]) return false
         return true
     }
 
-    maskCompare_noAO(index, mask, maskVal, aomask, aoVal) {
+    function maskCompare_noAO(index, mask, maskVal, aomask, aoVal) {
         if (maskVal !== mask[index]) return false
         return true
     }
 
-    pushMeshColors_noAO(colors, c, ao, aoValues, revAoVal) {
+    function pushMeshColors_noAO(colors, c, ao, aoValues, revAoVal) {
         colors.push(c[0], c[1], c[2], 1)
         colors.push(c[0], c[1], c[2], 1)
         colors.push(c[0], c[1], c[2], 1)
@@ -667,15 +675,15 @@ class GreedyMesher {
         return true // triangle direction doesn't matter for non-AO
     }
 
-    pushMeshColors(colors, c, ao, aoValues, revAoVal) {
-        var ao00 = this.unpackAOMask(ao, 0, 0)
-        var ao10 = this.unpackAOMask(ao, 1, 0)
-        var ao11 = this.unpackAOMask(ao, 1, 1)
-        var ao01 = this.unpackAOMask(ao, 0, 1)
-        this.pushAOColor(colors, c, ao00, aoValues, revAoVal)
-        this.pushAOColor(colors, c, ao10, aoValues, revAoVal)
-        this.pushAOColor(colors, c, ao11, aoValues, revAoVal)
-        this.pushAOColor(colors, c, ao01, aoValues, revAoVal)
+    function pushMeshColors(colors, c, ao, aoValues, revAoVal) {
+        var ao00 = unpackAOMask(ao, 0, 0)
+        var ao10 = unpackAOMask(ao, 1, 0)
+        var ao11 = unpackAOMask(ao, 1, 1)
+        var ao01 = unpackAOMask(ao, 0, 1)
+        pushAOColor(colors, c, ao00, aoValues, revAoVal)
+        pushAOColor(colors, c, ao10, aoValues, revAoVal)
+        pushAOColor(colors, c, ao11, aoValues, revAoVal)
+        pushAOColor(colors, c, ao01, aoValues, revAoVal)
 
         // this bit is pretty magical..
         var triDir = true
@@ -708,12 +716,12 @@ class GreedyMesher {
 
     // when skipping reverse AO, uses this simpler version of the function:
 
-    packAOMaskNoReverse(data, ipos, ineg, j, k) {
+    function packAOMaskNoReverse(data, ipos, ineg, j, k) {
         var a00 = 1
         var a01 = 1
         var a10 = 1
         var a11 = 1
-        var solidBit = this.constants.SOLID_BIT
+        var solidBit = SOLID_BIT
 
         // facing into a solid (non-opaque) block?
         var facingSolid = (solidBit & data.get(ipos, j, k))
@@ -744,12 +752,12 @@ class GreedyMesher {
 
     // more complicated AO packing when doing reverse AO on corners
 
-    packAOMask(data, ipos, ineg, j, k) {
+    function packAOMask(data, ipos, ineg, j, k) {
         var a00 = 1
         var a01 = 1
         var a10 = 1
         var a11 = 1
-        var solidBit = this.constants.SOLID_BIT
+        var solidBit = SOLID_BIT
 
         // facing into a solid (non-opaque) block?
         var facingSolid = (solidBit & data.get(ipos, j, k))
@@ -817,7 +825,7 @@ class GreedyMesher {
 
     // unpack (2 bit) ao value from ao mask
     // see above for details
-    unpackAOMask(aomask, jpos, kpos) {
+    function unpackAOMask(aomask, jpos, kpos) {
         var offset = jpos ? (kpos ? 6 : 4) : (kpos ? 2 : 0)
         return aomask >> offset & 3
     }
@@ -825,7 +833,7 @@ class GreedyMesher {
 
     // premultiply vertex colors by value depending on AO level
     // then push them into color array
-    pushAOColor(colors, baseCol, ao, aoVals, revAoVal) {
+    function pushAOColor(colors, baseCol, ao, aoVals, revAoVal) {
         var mult = (ao === 0) ? revAoVal : aoVals[ao - 1]
         colors.push(baseCol[0] * mult, baseCol[1] * mult, baseCol[2] * mult, 1)
     }

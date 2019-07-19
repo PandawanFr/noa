@@ -84,6 +84,58 @@ export default class Registry {
         var white = [1, 1, 1]
 
 
+        /*
+         *      quick accessors for querying block ID stuff
+         */
+
+        /** 
+         * block solidity (as in physics) 
+         * @param id
+         */
+        this.getBlockSolidity = id => this._blockSolidity[id]
+
+        /**
+         * block opacity - whether it obscures the whole voxel (dirt) or 
+         * can be partially seen through (like a fencepost, etc)
+         * @param id
+         */
+        this.getBlockOpacity = id => this._blockOpacity[id]
+
+        /** 
+         * block is fluid or not
+         * @param id
+         */
+        this.getBlockFluidity = id => this._blockIsFluid[id]
+
+        /** 
+         * Get block property object passed in at registration
+         * @param id
+         */
+        this.getBlockProps = id => this._blockProps[id]
+
+        // look up a block ID's face material
+        // dir is a value 0..5: [ +x, -x, +y, -y, +z, -z ]
+        this.getBlockFaceMaterial = (blockId, dir) => this._blockMats[blockId * 6 + dir]
+
+        // look up material color given ID
+        this.getMaterialColor = matID => this._matData[matID].color
+
+        // look up material texture given ID
+        this.getMaterialTexture = matID => this._matData[matID].texture
+
+        // look up material's properties: color, alpha, texture, textureAlpha
+        this.getMaterialData = matID => this._matData[matID]
+
+        /**
+         * look up material ID given its name
+         * if lazy is set, pre-register the name and return an ID
+         */
+        this.getMaterialId = (matIDs, name, lazyInit) => {
+            if (!name) return 0
+            var id = matIDs[name]
+            if (id === undefined && lazyInit) id = this.registerMaterial(name)
+            return id
+        }
 
 
 
@@ -137,14 +189,13 @@ export default class Registry {
      *  * onCustomMeshCreate(): block event handler
      */
 
-    registerBlock(id, _options) {
-        _options = _options || {}
+    registerBlock(id, _options = {}) {
         blockDefaults.solid = !_options.fluid
         blockDefaults.opaque = !_options.fluid
         var opts = Object.assign({}, blockDefaults, _options)
 
         // console.log('register block: ', id, opts)
-        if (id < 1 || id > MAX_BLOCK_IDS) throw 'Block id exceeds max: ' + id
+        if (id < 1 || id > MAX_BLOCK_IDS) throw `Block id exceeds max: ${id}`
 
         // if block ID is greater than current highest ID, 
         // register fake blocks to avoid holes in lookup arrays
@@ -178,11 +229,11 @@ export default class Registry {
         } else if (mat.length && mat.length == 6) {
             // interpret as [-x, +x, -y, +y, -z, +z]
             mats = mat
-        } else throw 'Invalid material parameter: ' + mat
+        } else throw `Invalid material parameter: ${mat}`
 
         // argument is material name, but store as material id, allocating one if needed
         for (var i = 0; i < 6; ++i) {
-            this._blockMats[id * 6 + i] = this.getMaterialId(this, this._matIDs, mats[i], true)
+            this._blockMats[id * 6 + i] = this.getMaterialId(this._matIDs, mats[i], true)
         }
 
         // props data object - currently only used for fluid properties
@@ -229,61 +280,6 @@ export default class Registry {
             textureAlpha: !!texHasAlpha,
             renderMat: renderMaterial || null,
         }
-        return id
-    }
-
-
-
-    /*
-     *      quick accessors for querying block ID stuff
-     */
-
-    /** 
-     * block solidity (as in physics) 
-     * @param id
-     */
-    getBlockSolidity(id) { return this._blockSolidity[id] }
-
-    /**
-     * block opacity - whether it obscures the whole voxel (dirt) or 
-     * can be partially seen through (like a fencepost, etc)
-     * @param id
-     */
-    getBlockOpacity(id) { return this._blockOpacity[id] }
-
-    /** 
-     * block is fluid or not
-     * @param id
-     */
-    getBlockFluidity(id) { return this._blockIsFluid[id] }
-
-    /** 
-     * Get block property object passed in at registration
-     * @param id
-     */
-    getBlockProps(id) { return this._blockProps[id] }
-
-    // look up a block ID's face material
-    // dir is a value 0..5: [ +x, -x, +y, -y, +z, -z ]
-    getBlockFaceMaterial(blockId, dir) { return this._blockMats[blockId * 6 + dir] }
-
-    // look up material color given ID
-    getMaterialColor(matID) { return this._matData[matID].color }
-
-    // look up material texture given ID
-    getMaterialTexture(matID) { return this._matData[matID].texture }
-
-    // look up material's properties: color, alpha, texture, textureAlpha
-    getMaterialData(matID) { return this._matData[matID] }
-
-    /**
-     * look up material ID given its name
-     * if lazy is set, pre-register the name and return an ID
-     */
-    getMaterialId(matIDs, name, lazyInit) {
-        if (!name) return 0
-        var id = matIDs[name]
-        if (id === undefined && lazyInit) id = this.registerMaterial(name)
         return id
     }
 }

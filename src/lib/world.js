@@ -1,5 +1,5 @@
 import ndHash from 'ndarray-hash'
-import {EventEmitter} from 'events'
+import { EventEmitter } from 'events'
 import Chunk from './chunk'
 import { Timer } from './util'
 
@@ -289,9 +289,9 @@ function _report(world, name, arr, ext) {
         if (chunk.isFull) full++
         if (chunk.isEmpty) empty++
     }
-    var len = (arr.length + '        ').substr(0, 6)
+    var len = (`${arr.length}        `).substr(0, 6)
     var es = (ext) ? [', ', full, ' full, ', empty, ' empty'].join('') : ''
-    console.log(name, len, ct, 'invalid' + es)
+    console.log(name, len, ct, `invalid${es}`)
 }
 
 
@@ -308,7 +308,7 @@ function _report(world, name, arr, ext) {
 
 // canonical string ID handling for the i,j,k-th chunk
 function getChunkID(i, j, k) {
-    return i + '|' + j + '|' + k
+    return `${i}|${j}|${k}`
 }
 
 function parseChunkID(id) {
@@ -499,7 +499,7 @@ function buildChunkAddQueue(world, ci, cj, ck) {
 
                 if (getChunk(world, i, j, k)) continue
                 var id = getChunkID(i, j, k)
-                if (pending.indexOf(id) > -1) continue
+                if (pending.includes(id)) continue
                 queue.push(id)
                 distArr.push(distSq)
             }

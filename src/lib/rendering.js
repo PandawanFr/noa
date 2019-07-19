@@ -1,7 +1,7 @@
 import glvec3 from 'gl-vec3'
 import aabb from 'aabb-3d'
 import sweep from 'voxel-aabb-sweep'
-import {removeUnorderedListItem, Timer} from './util'
+import { removeUnorderedListItem, Timer } from './util'
 
 
 // For now, assume Babylon.js has been imported into the global space already
@@ -43,7 +43,7 @@ var defaults = {
  * @class
  * @typicalname noa.rendering
  * @classdesc Manages all rendering.
-*/
+ */
 
 export default class Rendering {
     constructor(noa, opts, canvas) {
@@ -200,7 +200,7 @@ export default class Rendering {
     }
 
     makeMeshInstance(mesh, isStatic) {
-        var m = mesh.createInstance(mesh.name + ' instance' || 'instance')
+        var m = mesh.createInstance(`${mesh.name} instance` || 'instance')
         if (mesh.billboardMode) m.billboardMode = mesh.billboardMode
         // add to scene so as to render
         this.addMeshToScene(m, isStatic)
@@ -316,7 +316,7 @@ export default class Rendering {
         console.log('meshes - octree:', octs.length, '  dynamic:', dyns.length,
             '   avg meshes/octreeBlock:', avgPerOct)
 
-        function warn(obj, msg) { console.warn(obj.name + ' --- ' + msg) }
+        function warn(obj, msg) { console.warn(`${obj.name} --- ${msg}`) }
 
         function empty(mesh) { return (mesh.getIndices().length === 0) }
 
@@ -340,7 +340,7 @@ export default class Rendering {
             ct[n] = ct[n] || 0
             ct[n]++
         })
-        for (var s in ct) console.log('   ' + (ct[s] + '       ').substr(0, 7) + s)
+        for (var s in ct) console.log(`   ${(`${ct[s]}       `).substr(0, 7)}${s}`)
     }
 }
 
@@ -616,7 +616,7 @@ function setUpFPS() {
         if (nt - start < every) return
         var fps = Math.round(ct / (nt - start) * 1000)
         var min = Math.round(1 / longest * 1000)
-        div.innerHTML = fps + '<br>' + min
+        div.innerHTML = `${fps}<br>${min}`
         ct = 0
         longest = 0
         start = nt

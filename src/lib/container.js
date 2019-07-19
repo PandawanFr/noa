@@ -1,5 +1,5 @@
 import createGameShell from 'game-shell'
-import {EventEmitter} from 'events'
+import { EventEmitter } from 'events'
 
 /**
  * @class
