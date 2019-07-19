@@ -1,7 +1,4 @@
-'use strict'
-
-var boxIntersect = require('box-intersect')
-
+import boxIntersect from 'box-intersect'
 
 /*
  * 	Every frame, entities with this component will get mutually checked for colliions
@@ -22,7 +19,7 @@ var boxIntersect = require('box-intersect')
 
 
 
-module.exports = function (noa) {
+export default function (noa) {
 
     return {
 
@@ -55,7 +52,7 @@ module.exports = function (noa) {
             }
 
             // run the intersect library
-            boxIntersect(intervals, function (a, b) {
+            boxIntersect(intervals, (a, b) => {
                 var stateA = states[a]
                 var stateB = states[b]
                 var intervalA = intervals[a]

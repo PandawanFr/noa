@@ -1,9 +1,7 @@
-'use strict'
-
-var glvec3 = require('gl-vec3')
-var aabb = require('aabb-3d')
-var sweep = require('voxel-aabb-sweep')
-var removeUnorderedListItem = require('./util').removeUnorderedListItem
+import glvec3 from 'gl-vec3'
+import aabb from 'aabb-3d'
+import sweep from 'voxel-aabb-sweep'
+import {removeUnorderedListItem, Timer} from './util'
 
 
 // For now, assume Babylon.js has been imported into the global space already
@@ -11,7 +9,7 @@ if (!BABYLON) {
     throw new Error('Babylon.js reference not found! Abort! Abort!')
 }
 
-module.exports = function (noa, opts, canvas) {
+export default function (noa, opts, canvas) {
     return new Rendering(noa, opts, canvas)
 }
 
@@ -51,28 +49,303 @@ var defaults = {
  * @classdesc Manages all rendering.
 */
 
-function Rendering(noa, opts, canvas) {
-    this.noa = noa
-    opts = Object.assign({}, defaults, opts)
-    this.zoomDistance = opts.initialCameraZoom // zoom setting
-    this._currentZoom = this.zoomDistance // current actual zoom level
-    this._cameraZoomSpeed = opts.cameraZoomSpeed
-    this._maxCamAngle = opts.cameraMaxAngle
+class Rendering {
+    constructor(noa, opts, canvas) {
+        this.noa = noa
+        opts = Object.assign({}, defaults, opts)
+        this.zoomDistance = opts.initialCameraZoom // zoom setting
+        this._currentZoom = this.zoomDistance // current actual zoom level
+        this._cameraZoomSpeed = opts.cameraZoomSpeed
+        this._maxCamAngle = opts.cameraMaxAngle
 
-    // internals
-    this._dynamicMeshes = []
-    this.useAO = !!opts.useAO
-    this.aoVals = opts.AOmultipliers
-    this.revAoVal = opts.reverseAOmultiplier
-    this.meshingCutoffTime = 6 // ms
-    this._dynamicMeshOctrees = opts.useOctreesForDynamicMeshes
-    this._resizeDebounce = 250 // ms
+        // internals
+        this._dynamicMeshes = []
+        this.useAO = !!opts.useAO
+        this.aoVals = opts.AOmultipliers
+        this.revAoVal = opts.reverseAOmultiplier
+        this.meshingCutoffTime = 6 // ms
+        this._dynamicMeshOctrees = opts.useOctreesForDynamicMeshes
+        this._resizeDebounce = 250 // ms
 
-    // set up babylon scene
-    initScene(this, canvas, opts)
+        // set up babylon scene
+        initScene(this, canvas, opts)
 
-    // for debugging
-    if (opts.showFPS) setUpFPS()
+        // for debugging
+        if (opts.showFPS) setUpFPS()
+    }
+
+    /*
+     *   PUBLIC API 
+     */
+
+    // Init anything about scene that needs to wait for engine internals
+    initScene() {
+        // engine entity to follow the player and act as camera target
+        this.cameraTarget = this.noa.ents.createEntity(['position'])
+        this.noa.ents.addComponent(this.cameraTarget, 'followsEntity', {
+            entity: this.noa.playerEntity,
+            offset: [0, this.noa.playerEyeOffset, 0],
+        })
+    }
+
+    /**
+     * The Babylon `scene` object representing the game world.
+     * @member
+     */
+    getScene() {
+        return this._scene
+    }
+
+    // per-tick listener for rendering-related stuff
+    tick(dt) {
+        if (this._dynamicMeshOctrees) updateDynamicMeshOctrees(this)
+    }
+
+    render(dt) {
+        profile_hook('start')
+        updateCamera(this)
+        profile_hook('updateCamera')
+        this._engine.beginFrame()
+        profile_hook('beginFrame')
+        this._scene.render()
+        profile_hook('render')
+        fps_hook()
+        this._engine.endFrame()
+        profile_hook('endFrame')
+        profile_hook('end')
+    }
+
+    resize(e) {
+        if (!pendingResize) {
+            pendingResize = true
+            setTimeout(() => {
+                this._engine.resize()
+                pendingResize = false
+            }, this._resizeDebounce)
+        }
+    }
+
+    highlightBlockFace(show, posArr, normArr) {
+        var m = getHighlightMesh(this)
+        if (show) {
+            // bigger slop when zoomed out
+            var dist = this._currentZoom + glvec3.distance(this.noa.getPlayerEyePosition(), posArr)
+            var slop = 0.001 + 0.001 * dist
+            var pos = _highlightPos
+            for (var i = 0; i < 3; ++i) {
+                pos[i] = Math.floor(posArr[i]) + .5 + ((0.5 + slop) * normArr[i])
+            }
+            m.position.copyFromFloats(pos[0], pos[1], pos[2])
+            m.rotation.x = (normArr[1]) ? Math.PI / 2 : 0
+            m.rotation.y = (normArr[0]) ? Math.PI / 2 : 0
+        }
+        m.setEnabled(show)
+    }
+
+    /** @method */
+    getCameraVector() {
+        return vec3.TransformCoordinates(BABYLON.Axis.Z, this._rotationHolder.getWorldMatrix())
+    }
+
+    /** @method */
+    getCameraPosition() {
+        return vec3.TransformCoordinates(zero, this._camera.getWorldMatrix())
+    }
+
+    /** @method */
+    getCameraRotation() {
+        var rot = this._rotationHolder.rotation
+        return [rot.x, rot.y]
+    }
+
+    setCameraRotation(x, y) {
+        var rot = this._rotationHolder.rotation
+        rot.x = Math.max(-this._maxCamAngle, Math.min(this._maxCamAngle, x))
+        rot.y = y
+    }
+
+    /**
+     * add a mesh to the scene's octree setup so that it renders
+     * pass in isStatic=true if the mesh won't move (i.e. change octree blocks)
+     * @method
+     */
+    addMeshToScene(mesh, isStatic) {
+        // exit silently if mesh has already been added and not removed
+        if (mesh._currentNoaChunk || this._octree.dynamicContent.includes(mesh)) {
+            return
+        }
+        var pos = mesh.position
+        var chunk = this.noa.world._getChunkByCoords(pos.x, pos.y, pos.z)
+        if (this._dynamicMeshOctrees && chunk && chunk.octreeBlock) {
+            // add to an octree
+            chunk.octreeBlock.entries.push(mesh)
+            mesh._currentNoaChunk = chunk
+        } else {
+            // mesh added outside an active chunk - so treat as scene-dynamic
+            this._octree.dynamicContent.push(mesh)
+        }
+        // remember for updates if it's not static
+        if (!isStatic) this._dynamicMeshes.push(mesh)
+        // handle remover when mesh gets disposed
+        var remover = this.removeMeshFromScene.bind(this, mesh)
+        mesh.onDisposeObservable.add(remover)
+    }
+
+    /**  Undoes everything `addMeshToScene` does
+     * @method
+     */
+    removeMeshFromScene(mesh) {
+        if (mesh._currentNoaChunk && mesh._currentNoaChunk.octreeBlock) {
+            removeUnorderedListItem(mesh._currentNoaChunk.octreeBlock.entries, mesh)
+        }
+        mesh._currentNoaChunk = null
+        removeUnorderedListItem(this._octree.dynamicContent, mesh)
+        removeUnorderedListItem(this._dynamicMeshes, mesh)
+    }
+
+    makeMeshInstance(mesh, isStatic) {
+        var m = mesh.createInstance(mesh.name + ' instance' || 'instance')
+        if (mesh.billboardMode) m.billboardMode = mesh.billboardMode
+        // add to scene so as to render
+        this.addMeshToScene(m, isStatic)
+
+        // testing performance tweaks
+
+        // make instance meshes skip over getLOD checks, since there may be lots of them
+        // mesh.getLOD = m.getLOD = function () { return mesh }
+        m._currentLOD = mesh
+
+        // make terrain instance meshes skip frustum checks 
+        // (they'll still get culled by octree checks)
+        // if (isStatic) m.isInFrustum = function () { return true }
+
+        return m
+    }
+
+    // Create a default standardMaterial:
+    //      flat, nonspecular, fully reflects diffuse and ambient light
+    makeStandardMaterial(name) {
+        var mat = new BABYLON.StandardMaterial(name, this._scene)
+        mat.specularColor.copyFromFloats(0, 0, 0)
+        mat.ambientColor.copyFromFloats(1, 1, 1)
+        mat.diffuseColor.copyFromFloats(1, 1, 1)
+        return mat
+    }
+
+    /*
+     *
+     * 
+     *   ACCESSORS FOR CHUNK ADD/REMOVAL/MESHING
+     *
+     * 
+     */
+
+    prepareChunkForRendering(chunk) {
+        var cs = chunk.size
+        var min = new vec3(chunk.x, chunk.y, chunk.z)
+        var max = new vec3(chunk.x + cs, chunk.y + cs, chunk.z + cs)
+        chunk.octreeBlock = new BABYLON.OctreeBlock(min, max, undefined, undefined, undefined, $ => {})
+        this._octree.blocks.push(chunk.octreeBlock)
+    }
+
+    disposeChunkForRendering(chunk) {
+        this.removeTerrainMesh(chunk)
+        removeUnorderedListItem(this._octree.blocks, chunk.octreeBlock)
+        chunk.octreeBlock.entries.length = 0
+        chunk.octreeBlock = null
+    }
+
+    addTerrainMesh(chunk, mesh) {
+        this.removeTerrainMesh(chunk)
+        if (mesh.getIndices().length) this.addMeshToScene(mesh, true)
+        chunk._terrainMesh = mesh
+    }
+
+    removeTerrainMesh(chunk) {
+        if (!chunk._terrainMesh) return
+        chunk._terrainMesh.dispose()
+        chunk._terrainMesh = null
+    }
+
+    /*
+     * 
+     *      sanity checks:
+     * 
+     */
+
+    debug_SceneCheck() {
+        var meshes = this._scene.meshes
+        var dyns = this._octree.dynamicContent
+        var octs = []
+        var numOcts = 0
+        var mats = this._scene.materials
+        var allmats = []
+        mats.forEach(mat => {
+            if (mat.subMaterials) mat.subMaterials.forEach(mat => allmats.push(mat))
+            else allmats.push(mat)
+        })
+        this._octree.blocks.forEach(block => {
+            numOcts++
+            block.entries.forEach(m => octs.push(m))
+        })
+        meshes.forEach(m => {
+            if (m._isDisposed) warn(m, 'disposed mesh in scene')
+            if (empty(m)) return
+            if (missing(m, dyns, octs)) warn(m, 'non-empty mesh missing from octree')
+            if (!m.material) { warn(m, 'non-empty scene mesh with no material'); return }
+            (m.material.subMaterials || [m.material]).forEach(mat => {
+                if (missing(mat, mats)) warn(mat, 'mesh material not in scene')
+            })
+        })
+        var unusedMats = []
+        allmats.forEach(mat => {
+            var used = false
+            meshes.forEach(mesh => {
+                if (mesh.material === mat) used = true
+                if (!mesh.material || !mesh.material.subMaterials) return
+                if (mesh.material.subMaterials.includes(mat)) used = true
+            })
+            if (!used) unusedMats.push(mat.name)
+        })
+        if (unusedMats.length) {
+            console.warn('Materials unused by any mesh: ', unusedMats.join(', '))
+        }
+        dyns.forEach(m => {
+            if (missing(m, meshes)) warn(m, 'octree/dynamic mesh not in scene')
+        })
+        octs.forEach(m => {
+            if (missing(m, meshes)) warn(m, 'octree block mesh not in scene')
+        })
+        var avgPerOct = Math.round(10 * octs.length / numOcts) / 10
+        console.log('meshes - octree:', octs.length, '  dynamic:', dyns.length,
+            '   avg meshes/octreeBlock:', avgPerOct)
+
+        function warn(obj, msg) { console.warn(obj.name + ' --- ' + msg) }
+
+        function empty(mesh) { return (mesh.getIndices().length === 0) }
+
+        function missing(obj, list1, list2) {
+            if (!obj) return false
+            if (list1.includes(obj)) return false
+            if (list2 && list2.includes(obj)) return false
+            return true
+        }
+        return 'done.'
+    }
+
+    debug_MeshCount() {
+        var ct = {}
+        this._scene.meshes.forEach(m => {
+            var n = m.name || ''
+            n = n.replace(/-\d+.*/, '#')
+            n = n.replace(/\d+.*/, '#')
+            n = n.replace(/(rotHolder|camHolder|camScreen)/, 'rendering use')
+            n = n.replace(/atlas sprite .*/, 'atlas sprites')
+            ct[n] = ct[n] || 0
+            ct[n]++
+        })
+        for (var s in ct) console.log('   ' + (ct[s] + '       ').substr(0, 7) + s)
+    }
 }
 
 
@@ -130,144 +403,13 @@ function initScene(self, canvas, opts) {
 
 
 
-/*
- *   PUBLIC API 
- */
-
-// Init anything about scene that needs to wait for engine internals
-Rendering.prototype.initScene = function () {
-    // engine entity to follow the player and act as camera target
-    this.cameraTarget = this.noa.ents.createEntity(['position'])
-    this.noa.ents.addComponent(this.cameraTarget, 'followsEntity', {
-        entity: this.noa.playerEntity,
-        offset: [0, this.noa.playerEyeOffset, 0],
-    })
-}
-
-/**
- * The Babylon `scene` object representing the game world.
- * @member
- */
-Rendering.prototype.getScene = function () {
-    return this._scene
-}
-
-// per-tick listener for rendering-related stuff
-Rendering.prototype.tick = function (dt) {
-    if (this._dynamicMeshOctrees) updateDynamicMeshOctrees(this)
-}
-
-
-
-
-
-Rendering.prototype.render = function (dt) {
-    profile_hook('start')
-    updateCamera(this)
-    profile_hook('updateCamera')
-    this._engine.beginFrame()
-    profile_hook('beginFrame')
-    this._scene.render()
-    profile_hook('render')
-    fps_hook()
-    this._engine.endFrame()
-    profile_hook('endFrame')
-    profile_hook('end')
-}
-
-
-
-Rendering.prototype.resize = function (e) {
-    if (!pendingResize) {
-        pendingResize = true
-        setTimeout(() => {
-            this._engine.resize()
-            pendingResize = false
-        }, this._resizeDebounce)
-    }
-}
 var pendingResize = false
 
 
 
-Rendering.prototype.highlightBlockFace = function (show, posArr, normArr) {
-    var m = getHighlightMesh(this)
-    if (show) {
-        // bigger slop when zoomed out
-        var dist = this._currentZoom + glvec3.distance(this.noa.getPlayerEyePosition(), posArr)
-        var slop = 0.001 + 0.001 * dist
-        var pos = _highlightPos
-        for (var i = 0; i < 3; ++i) {
-            pos[i] = Math.floor(posArr[i]) + .5 + ((0.5 + slop) * normArr[i])
-        }
-        m.position.copyFromFloats(pos[0], pos[1], pos[2])
-        m.rotation.x = (normArr[1]) ? Math.PI / 2 : 0
-        m.rotation.y = (normArr[0]) ? Math.PI / 2 : 0
-    }
-    m.setEnabled(show)
-}
 var _highlightPos = glvec3.create()
 
-/** @method */
-Rendering.prototype.getCameraVector = function () {
-    return vec3.TransformCoordinates(BABYLON.Axis.Z, this._rotationHolder.getWorldMatrix())
-}
 var zero = vec3.Zero()
-/** @method */
-Rendering.prototype.getCameraPosition = function () {
-    return vec3.TransformCoordinates(zero, this._camera.getWorldMatrix())
-}
-/** @method */
-Rendering.prototype.getCameraRotation = function () {
-    var rot = this._rotationHolder.rotation
-    return [rot.x, rot.y]
-}
-Rendering.prototype.setCameraRotation = function (x, y) {
-    var rot = this._rotationHolder.rotation
-    rot.x = Math.max(-this._maxCamAngle, Math.min(this._maxCamAngle, x))
-    rot.y = y
-}
-
-
-
-/**
- * add a mesh to the scene's octree setup so that it renders
- * pass in isStatic=true if the mesh won't move (i.e. change octree blocks)
- * @method
- */
-Rendering.prototype.addMeshToScene = function (mesh, isStatic) {
-    // exit silently if mesh has already been added and not removed
-    if (mesh._currentNoaChunk || this._octree.dynamicContent.includes(mesh)) {
-        return
-    }
-    var pos = mesh.position
-    var chunk = this.noa.world._getChunkByCoords(pos.x, pos.y, pos.z)
-    if (this._dynamicMeshOctrees && chunk && chunk.octreeBlock) {
-        // add to an octree
-        chunk.octreeBlock.entries.push(mesh)
-        mesh._currentNoaChunk = chunk
-    } else {
-        // mesh added outside an active chunk - so treat as scene-dynamic
-        this._octree.dynamicContent.push(mesh)
-    }
-    // remember for updates if it's not static
-    if (!isStatic) this._dynamicMeshes.push(mesh)
-    // handle remover when mesh gets disposed
-    var remover = this.removeMeshFromScene.bind(this, mesh)
-    mesh.onDisposeObservable.add(remover)
-}
-
-/**  Undoes everything `addMeshToScene` does
- * @method
- */
-Rendering.prototype.removeMeshFromScene = function (mesh) {
-    if (mesh._currentNoaChunk && mesh._currentNoaChunk.octreeBlock) {
-        removeUnorderedListItem(mesh._currentNoaChunk.octreeBlock.entries, mesh)
-    }
-    mesh._currentNoaChunk = null
-    removeUnorderedListItem(this._octree.dynamicContent, mesh)
-    removeUnorderedListItem(this._dynamicMeshes, mesh)
-}
 
 
 
@@ -296,80 +438,6 @@ function updateDynamicMeshOctrees(self) {
         }
         mesh._currentNoaChunk = next
     }
-}
-
-
-
-Rendering.prototype.makeMeshInstance = function (mesh, isStatic) {
-    var m = mesh.createInstance(mesh.name + ' instance' || 'instance')
-    if (mesh.billboardMode) m.billboardMode = mesh.billboardMode
-    // add to scene so as to render
-    this.addMeshToScene(m, isStatic)
-
-    // testing performance tweaks
-
-    // make instance meshes skip over getLOD checks, since there may be lots of them
-    // mesh.getLOD = m.getLOD = function () { return mesh }
-    m._currentLOD = mesh
-
-    // make terrain instance meshes skip frustum checks 
-    // (they'll still get culled by octree checks)
-    // if (isStatic) m.isInFrustum = function () { return true }
-
-    return m
-}
-
-
-
-// Create a default standardMaterial:
-//      flat, nonspecular, fully reflects diffuse and ambient light
-Rendering.prototype.makeStandardMaterial = function (name) {
-    var mat = new BABYLON.StandardMaterial(name, this._scene)
-    mat.specularColor.copyFromFloats(0, 0, 0)
-    mat.ambientColor.copyFromFloats(1, 1, 1)
-    mat.diffuseColor.copyFromFloats(1, 1, 1)
-    return mat
-}
-
-
-
-
-
-
-
-/*
- *
- * 
- *   ACCESSORS FOR CHUNK ADD/REMOVAL/MESHING
- *
- * 
- */
-
-Rendering.prototype.prepareChunkForRendering = function (chunk) {
-    var cs = chunk.size
-    var min = new vec3(chunk.x, chunk.y, chunk.z)
-    var max = new vec3(chunk.x + cs, chunk.y + cs, chunk.z + cs)
-    chunk.octreeBlock = new BABYLON.OctreeBlock(min, max, undefined, undefined, undefined, $ => {})
-    this._octree.blocks.push(chunk.octreeBlock)
-}
-
-Rendering.prototype.disposeChunkForRendering = function (chunk) {
-    this.removeTerrainMesh(chunk)
-    removeUnorderedListItem(this._octree.blocks, chunk.octreeBlock)
-    chunk.octreeBlock.entries.length = 0
-    chunk.octreeBlock = null
-}
-
-Rendering.prototype.addTerrainMesh = function (chunk, mesh) {
-    this.removeTerrainMesh(chunk)
-    if (mesh.getIndices().length) this.addMeshToScene(mesh, true)
-    chunk._terrainMesh = mesh
-}
-
-Rendering.prototype.removeTerrainMesh = function (chunk) {
-    if (!chunk._terrainMesh) return
-    chunk._terrainMesh.dispose()
-    chunk._terrainMesh = null
 }
 
 
@@ -403,9 +471,7 @@ function cameraObstructionDistance(self) {
     var size = 0.2
     if (!_camBox) {
         _camBox = new aabb([0, 0, 0], [size * 2, size * 2, size * 2])
-        _getVoxel = function (x, y, z) {
-            return self.noa.world.getBlockSolidity(x, y, z)
-        }
+        _getVoxel = (x, y, z) => self.noa.world.getBlockSolidity(x, y, z)
     }
 
     var pos = self._cameraHolder.position
@@ -416,9 +482,7 @@ function cameraObstructionDistance(self) {
     var cam = self.getCameraVector()
     glvec3.set(_camVec, dist * cam.x, dist * cam.y, dist * cam.z)
 
-    return sweep(_getVoxel, _camBox, _camVec, function (dist, axis, dir, vec) {
-        return true
-    }, true)
+    return sweep(_getVoxel, _camBox, _camVec, (dist, axis, dir, vec) => true, true)
 }
 
 var _posVec = glvec3.create()
@@ -519,97 +583,11 @@ function getHighlightMesh(rendering) {
 
 
 
-/*
- * 
- *      sanity checks:
- * 
- */
-
-Rendering.prototype.debug_SceneCheck = function () {
-    var meshes = this._scene.meshes
-    var dyns = this._octree.dynamicContent
-    var octs = []
-    var numOcts = 0
-    var mats = this._scene.materials
-    var allmats = []
-    mats.forEach(mat => {
-        if (mat.subMaterials) mat.subMaterials.forEach(mat => allmats.push(mat))
-        else allmats.push(mat)
-    })
-    this._octree.blocks.forEach(function (block) {
-        numOcts++
-        block.entries.forEach(m => octs.push(m))
-    })
-    meshes.forEach(function (m) {
-        if (m._isDisposed) warn(m, 'disposed mesh in scene')
-        if (empty(m)) return
-        if (missing(m, dyns, octs)) warn(m, 'non-empty mesh missing from octree')
-        if (!m.material) { warn(m, 'non-empty scene mesh with no material'); return }
-        (m.material.subMaterials || [m.material]).forEach(function (mat) {
-            if (missing(mat, mats)) warn(mat, 'mesh material not in scene')
-        })
-    })
-    var unusedMats = []
-    allmats.forEach(mat => {
-        var used = false
-        meshes.forEach(mesh => {
-            if (mesh.material === mat) used = true
-            if (!mesh.material || !mesh.material.subMaterials) return
-            if (mesh.material.subMaterials.includes(mat)) used = true
-        })
-        if (!used) unusedMats.push(mat.name)
-    })
-    if (unusedMats.length) {
-        console.warn('Materials unused by any mesh: ', unusedMats.join(', '))
-    }
-    dyns.forEach(function (m) {
-        if (missing(m, meshes)) warn(m, 'octree/dynamic mesh not in scene')
-    })
-    octs.forEach(function (m) {
-        if (missing(m, meshes)) warn(m, 'octree block mesh not in scene')
-    })
-    var avgPerOct = Math.round(10 * octs.length / numOcts) / 10
-    console.log('meshes - octree:', octs.length, '  dynamic:', dyns.length,
-        '   avg meshes/octreeBlock:', avgPerOct)
-
-    function warn(obj, msg) { console.warn(obj.name + ' --- ' + msg) }
-
-    function empty(mesh) { return (mesh.getIndices().length === 0) }
-
-    function missing(obj, list1, list2) {
-        if (!obj) return false
-        if (list1.includes(obj)) return false
-        if (list2 && list2.includes(obj)) return false
-        return true
-    }
-    return 'done.'
-}
-
-Rendering.prototype.debug_MeshCount = function () {
-    var ct = {}
-    this._scene.meshes.forEach(m => {
-        var n = m.name || ''
-        n = n.replace(/-\d+.*/, '#')
-        n = n.replace(/\d+.*/, '#')
-        n = n.replace(/(rotHolder|camHolder|camScreen)/, 'rendering use')
-        n = n.replace(/atlas sprite .*/, 'atlas sprites')
-        ct[n] = ct[n] || 0
-        ct[n]++
-    })
-    for (var s in ct) console.log('   ' + (ct[s] + '       ').substr(0, 7) + s)
-}
-
-
-
-
-
-
-
-var profile_hook = (function () {
-    if (!PROFILE) return function () {}
+var profile_hook = (() => {
+    if (!PROFILE) return () => {}
     var every = 200
-    var timer = new(require('./util').Timer)(every, 'render internals')
-    return function (state) {
+    var timer = new(Timer)(every, 'render internals')
+    return state => {
         if (state === 'start') timer.start()
         else if (state === 'end') timer.report()
         else timer.add(state)
@@ -618,7 +596,7 @@ var profile_hook = (function () {
 
 
 
-var fps_hook = function () {}
+var fps_hook = () => {}
 
 function setUpFPS() {
     var div = document.createElement('div')
@@ -634,7 +612,7 @@ function setUpFPS() {
     var longest = 0
     var start = performance.now()
     var last = start
-    fps_hook = function () {
+    fps_hook = () => {
         ct++
         var nt = performance.now()
         if (nt - last > longest) longest = nt - last

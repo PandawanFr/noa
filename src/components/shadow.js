@@ -1,9 +1,7 @@
-'use strict'
-
-var vec3 = require('gl-vec3')
+import vec3 from 'gl-vec3'
 var shadowDist
 
-module.exports = function (noa, dist) {
+export default function (noa, dist) {
 
     shadowDist = dist
 

@@ -1,7 +1,4 @@
-'use strict'
-
-
-module.exports = function (noa) {
+export default function (noa) {
     return {
 
         name: 'collideTerrain',

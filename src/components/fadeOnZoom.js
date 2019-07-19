@@ -1,11 +1,9 @@
-'use strict'
-
 /**
  * Component for the player entity, when active hides the player's mesh 
  * when camera zoom is less than a certain amount
  */
 
-module.exports = function (noa) {
+export default function (noa) {
     return {
 
         name: 'fadeOnZoom',

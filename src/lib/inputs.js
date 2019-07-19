@@ -1,10 +1,6 @@
-'use strict'
+import createInputs from 'game-inputs'
 
-var createInputs = require('game-inputs')
-// var createInputs = require('../../../../npm-modules/game-inputs')
-
-
-module.exports = function (noa, opts, element) {
+export default function (noa, opts, element) {
     return makeInputs(noa, opts, element)
 }
 
@@ -40,7 +36,7 @@ function makeInputs(noa, opts, element) {
     for (var name in b) {
         var arr = (Array.isArray(b[name])) ? b[name] : [b[name]]
         arr.unshift(name)
-        inputs.bind.apply(inputs, arr)
+        inputs.bind(...arr)
     }
     return inputs
 }

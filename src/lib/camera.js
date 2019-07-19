@@ -1,6 +1,4 @@
-'use strict'
-
-module.exports = function (noa, opts) {
+export default function (noa, opts) {
     return new CameraController(noa, opts)
 }
 
@@ -22,49 +20,47 @@ var defaults = {
  */
 
 
-function CameraController(noa, opts) {
-    this.noa = noa
+class CameraController {
+    constructor(noa, opts) {
+        this.noa = noa
 
-    // options
-    opts = Object.assign({}, defaults, opts)
+        // options
+        opts = Object.assign({}, defaults, opts)
 
-    /** Horizontal sensitivity */
-    this.rotationScaleX = opts.rotationScaleX
+        /** Horizontal sensitivity */
+        this.rotationScaleX = opts.rotationScaleX
 
-    /** Vertical sensitivity */
-    this.rotationScaleY = opts.rotationScaleY
+        /** Vertical sensitivity */
+        this.rotationScaleY = opts.rotationScaleY
 
-    /** Mouse look inverse setting */
-    this.inverseY = opts.inverseY
-}
+        /** Mouse look inverse setting */
+        this.inverseY = opts.inverseY
+    }
 
+    /*
+     *
+     * On render, move/rotate the camera based on target and mouse inputs
+     *
+     */
 
+    updateForRender() {
+        // input state
+        var state = this.noa.inputs.state
 
+        // TODO: REMOVE EVENTUALLY
+        bugFix(state)
 
+        // Rotation: translate dx/dy inputs into y/x axis camera angle changes
+        var dx = this.rotationScaleY * state.dy * ((this.inverseY) ? -1 : 1)
+        var dy = this.rotationScaleX * state.dx
 
-/*
- *
- * On render, move/rotate the camera based on target and mouse inputs
- *
- */
+        // normalize/clamp/update
+        var camrot = this.noa.rendering.getCameraRotation() // [x,y]
+        var rotX = clamp(camrot[0] + dx, rotXcutoff)
+        var rotY = (camrot[1] + dy) % (Math.PI * 2)
+        this.noa.rendering.setCameraRotation(rotX, rotY)
 
-CameraController.prototype.updateForRender = function () {
-    // input state
-    var state = this.noa.inputs.state
-
-    // TODO: REMOVE EVENTUALLY
-    bugFix(state)
-
-    // Rotation: translate dx/dy inputs into y/x axis camera angle changes
-    var dx = this.rotationScaleY * state.dy * ((this.inverseY) ? -1 : 1)
-    var dy = this.rotationScaleX * state.dx
-
-    // normalize/clamp/update
-    var camrot = this.noa.rendering.getCameraRotation() // [x,y]
-    var rotX = clamp(camrot[0] + dx, rotXcutoff)
-    var rotY = (camrot[1] + dy) % (Math.PI * 2)
-    this.noa.rendering.setCameraRotation(rotX, rotY)
-
+    }
 }
 
 var rotXcutoff = (Math.PI / 2) - .0001 // engines can be weird when xRot == pi/2

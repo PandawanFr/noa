@@ -1,11 +1,7 @@
-'use strict'
+import createGameShell from 'game-shell'
+import {EventEmitter} from 'events'
 
-var createGameShell = require('game-shell')
-// var createGameShell = require('../../../../npm-modules/game-shell')
-var EventEmitter = require('events').EventEmitter
-
-
-module.exports = function (noa, opts) {
+export default function (noa, opts) {
     return new Container(noa, opts)
 }
 
@@ -17,38 +13,53 @@ module.exports = function (noa, opts) {
  * and manages HTML container, canvas, etc.
  */
 
-function Container(noa, opts) {
-    opts = opts || {}
-    this._noa = noa
-    this.element = opts.domElement || createContainerDiv()
-    this.canvas = getOrCreateCanvas(this.element)
-    this._shell = createShell(this.canvas, opts)
+class Container extends EventEmitter {
+    constructor(noa, opts) {
+        super()
 
-    // mouse state/feature detection
-    this.hasPointerLock = false
-    this.supportsPointerLock = false
-    this.pointerInGame = false
-    this.isFocused = document.hasFocus()
+        opts = opts || {}
+        this._noa = noa
+        this.element = opts.domElement || createContainerDiv()
+        this.canvas = getOrCreateCanvas(this.element)
+        this._shell = createShell(this.canvas, opts)
 
-    // basic listeners
-    var self = this
-    var lockChange = function (ev) { onLockChange(self, ev) }
-    document.addEventListener("pointerlockchange", lockChange, false)
-    document.addEventListener("mozpointerlockchange", lockChange, false)
-    document.addEventListener("webkitpointerlockchange", lockChange, false)
-    detectPointerLock(self)
+        // mouse state/feature detection
+        this.hasPointerLock = false
+        this.supportsPointerLock = false
+        this.pointerInGame = false
+        this.isFocused = document.hasFocus()
 
-    self.element.addEventListener('mouseenter', function () { self.pointerInGame = true })
-    self.element.addEventListener('mouseleave', function () { self.pointerInGame = false })
+        // basic listeners
+        var self = this
+        var lockChange = ev => { onLockChange(self, ev) }
+        document.addEventListener("pointerlockchange", lockChange, false)
+        document.addEventListener("mozpointerlockchange", lockChange, false)
+        document.addEventListener("webkitpointerlockchange", lockChange, false)
+        detectPointerLock(self)
 
-    window.addEventListener('focus', function () { self.isFocused = true })
-    window.addEventListener('blur', function () { self.isFocused = false })
+        self.element.addEventListener('mouseenter', () => { self.pointerInGame = true })
+        self.element.addEventListener('mouseleave', () => { self.pointerInGame = false })
 
-    // get shell events after it's initialized
-    this._shell.on('init', onShellInit.bind(null, this))
+        window.addEventListener('focus', () => { self.isFocused = true })
+        window.addEventListener('blur', () => { self.isFocused = false })
+
+        // get shell events after it's initialized
+        this._shell.on('init', onShellInit.bind(null, this))
+    }
+
+    /*
+     *   PUBLIC API 
+     */
+
+    appendTo(htmlElement) {
+        this.element.appendChild(htmlElement)
+    }
+
+    setPointerLock(lock) {
+        // not sure if this will work robustly
+        this._shell.pointerLock = !!lock
+    }
 }
-
-Container.prototype = Object.create(EventEmitter.prototype)
 
 
 
@@ -66,23 +77,6 @@ function onShellInit(self) {
 
     // let other components know DOM is ready
     self.emit('DOMready')
-}
-
-
-
-/*
- *   PUBLIC API 
- */
-
-Container.prototype.appendTo = function (htmlElement) {
-    this.element.appendChild(htmlElement)
-}
-
-
-
-Container.prototype.setPointerLock = function (lock) {
-    // not sure if this will work robustly
-    this._shell.pointerLock = !!lock
 }
 
 
@@ -175,7 +169,7 @@ function detectPointerLock(self) {
         ('webkitPointerLockElement' in document)
     if (lockElementExists) {
         self.supportsPointerLock = true
-        var listener = function (e) {
+        var listener = e => {
             self.supportsPointerLock = false
             document.removeEventListener(e.type, listener)
         }

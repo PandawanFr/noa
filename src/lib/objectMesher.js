@@ -1,10 +1,5 @@
-'use strict'
-
-
-var removeUnorderedListItem = require('./util').removeUnorderedListItem
-
-
-module.exports = new ObjectMesher()
+import {removeUnorderedListItem, Timer} from './util'
+export default new ObjectMesher()
 
 
 // enable for profiling..
@@ -41,12 +36,12 @@ function ObjectMesher() {
 
 
     // adds properties to the new chunk that will be used when processing
-    this.initChunk = function (chunk) {
+    this.initChunk = chunk => {
         chunk._objectBlocks = {}
         chunk._mergedObjectSystems = []
     }
 
-    this.disposeChunk = function (chunk) {
+    this.disposeChunk = chunk => {
         removeCurrentSystems(chunk)
         chunk._objectBlocks = null
     }
@@ -66,12 +61,12 @@ function ObjectMesher() {
 
 
     // accessors for the chunk to regester as object voxels are set/unset
-    this.addObjectBlock = function (chunk, id, x, y, z) {
+    this.addObjectBlock = (chunk, id, x, y, z) => {
         var key = x + '|' + y + '|' + z
         chunk._objectBlocks[key] = new ObjMeshDat(id, x, y, z, null)
     }
 
-    this.removeObjectBlock = function (chunk, x, y, z) {
+    this.removeObjectBlock = (chunk, x, y, z) => {
         var key = x + '|' + y + '|' + z
         if (chunk._objectBlocks[key]) delete chunk._objectBlocks[key]
     }
@@ -85,7 +80,7 @@ function ObjectMesher() {
      * 
      */
 
-    this.buildObjectMesh = function (chunk) {
+    this.buildObjectMesh = chunk => {
         profile_hook('start')
         // remove the current (if any) sps/mesh
         removeCurrentSystems(chunk)
@@ -169,7 +164,7 @@ function ObjectMesher() {
             var handlers = blockHandlerLookup[blockID]
             if (handlers) handlerFn = handlers.onCustomMeshCreate
             // jshint -W083
-            var setShape = function (particle, partIndex, shapeIndex) {
+            var setShape = (particle, partIndex, shapeIndex) => {
                 var key = blockArr[shapeIndex]
                 var dat = blockHash[key]
                 // set global positions for the custom handler, if any
@@ -200,11 +195,11 @@ function ObjectMesher() {
 
 
 
-var profile_hook = (function () {
-    if (!PROFILE) return function () {}
+var profile_hook = (() => {
+    if (!PROFILE) return () => {}
     var every = 50
-    var timer = new(require('./util').Timer)(every, 'Object meshing')
-    return function (state) {
+    var timer = new(Timer)(every, 'Object meshing')
+    return state => {
         if (state === 'start') timer.start()
         else if (state === 'end') timer.report()
         else timer.add(state)

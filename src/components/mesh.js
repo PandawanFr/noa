@@ -1,8 +1,6 @@
-'use strict'
+import vec3 from 'gl-vec3'
 
-var vec3 = require('gl-vec3')
-
-module.exports = function (noa) {
+export default function (noa) {
     return {
 
         name: 'mesh',

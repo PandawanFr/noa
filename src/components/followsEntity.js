@@ -1,14 +1,11 @@
-'use strict'
-
-var vec3 = require('gl-vec3')
-
+import vec3 from 'gl-vec3'
 
 /*
  * Indicates that an entity should be moved to another entity's position each tick,
  * possibly by a fixed offset, and the same for renderPositions each render
  */
 
-module.exports = function (noa) {
+export default function (noa) {
 
     return {
 

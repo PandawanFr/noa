@@ -1,5 +1,3 @@
-'use strict'
-
 /**
  * 
  * Input processing component - gets (key) input state and  
@@ -8,7 +6,7 @@
  * 
  */
 
-module.exports = function (noa) {
+export default function (noa) {
     return {
 
         name: 'receivesInputs',

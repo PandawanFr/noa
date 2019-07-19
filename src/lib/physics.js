@@ -1,10 +1,6 @@
-'use strict'
+import createPhysics from 'voxel-physics-engine'
 
-var createPhysics = require('voxel-physics-engine')
-// var createPhysics = require('../../../../npm-modules/voxel-physics-engine')
-
-
-module.exports = function (noa, opts) {
+export default function (noa, opts) {
     return makePhysics(noa, opts)
 }
 
@@ -26,8 +22,8 @@ var defaults = {
 function makePhysics(noa, opts) {
     opts = Object.assign({}, defaults, opts)
     var world = noa.world
-    var blockGetter = function (x, y, z) { return world.getBlockSolidity(x, y, z) }
-    var isFluidGetter = function (x, y, z) { return world.getBlockFluidity(x, y, z) }
+    var blockGetter = (x, y, z) => world.getBlockSolidity(x, y, z)
+    var isFluidGetter = (x, y, z) => world.getBlockFluidity(x, y, z)
 
     var physics = createPhysics(opts, blockGetter, isFluidGetter)
 

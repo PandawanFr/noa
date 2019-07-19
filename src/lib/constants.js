@@ -1,7 +1,5 @@
-'use strict'
-
 var constants = {}
-module.exports = constants
+export default constants
 
 
 /* 

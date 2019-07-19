@@ -1,11 +1,9 @@
-'use strict'
+import ndHash from 'ndarray-hash'
+import {EventEmitter} from 'events'
+import Chunk from './chunk'
+import { Timer } from './util'
 
-var ndHash = require('ndarray-hash')
-var EventEmitter = require('events').EventEmitter
-var Chunk = require('./chunk')
-
-
-module.exports = function (noa, opts) {
+export default function (noa, opts) {
     return new World(noa, opts)
 }
 
@@ -32,186 +30,239 @@ var defaultOptions = {
  * Extends `EventEmitter`
  */
 
-function World(noa, opts) {
-    this.noa = noa
-    opts = Object.assign({}, defaultOptions, opts)
+class World extends EventEmitter {
+    constructor(noa, opts) {
+        super()
 
-    this.userData = null
-    this.playerChunkLoaded = false
-    this.Chunk = Chunk
+        this.noa = noa
+        opts = Object.assign({}, defaultOptions, opts)
 
-    this.chunkSize = opts.chunkSize
-    this.chunkAddDistance = opts.chunkAddDistance
-    this.chunkRemoveDistance = opts.chunkRemoveDistance
-    if (this.chunkRemoveDistance < this.chunkAddDistance) {
-        this.chunkRemoveDistance = this.chunkAddDistance
+        this.userData = null
+        this.playerChunkLoaded = false
+        this.Chunk = Chunk
+
+        this.chunkSize = opts.chunkSize
+        this.chunkAddDistance = opts.chunkAddDistance
+        this.chunkRemoveDistance = opts.chunkRemoveDistance
+        if (this.chunkRemoveDistance < this.chunkAddDistance) {
+            this.chunkRemoveDistance = this.chunkAddDistance
+        }
+
+        // internals
+        this._chunkIDsToAdd = []
+        this._chunkIDsToRemove = []
+        this._chunkIDsInMemory = []
+        this._chunkIDsToCreate = []
+        this._chunkIDsToMesh = []
+        this._chunkIDsToMeshFirst = []
+        this._maxChunksPendingCreation = 20
+        this._maxChunksPendingMeshing = 20
+        this._maxProcessingPerTick = 9 // ms
+        this._maxProcessingPerRender = 5 // ms
+
+        // triggers a short visit to the meshing queue before renders
+        var self = this
+        noa.on('beforeRender', () => { beforeRender(self) })
+
+        // actual chunk storage - hash size hard coded for now
+        this._chunkHash = ndHash([1024, 1024, 1024])
+
+        // instantiate coord conversion functions based on the chunk size
+        // use bit twiddling if chunk size is a power of 2
+        var cs = this.chunkSize
+        if (cs & cs - 1 === 0) {
+            var shift = Math.log2(cs) | 0
+            var mask = (cs - 1) | 0
+            worldCoordToChunkCoord = coord => (coord >> shift) | 0
+            worldCoordToChunkIndex = coord => (coord & mask) | 0
+        } else {
+            worldCoordToChunkCoord = coord => Math.floor(coord / cs) | 0
+            worldCoordToChunkIndex = coord => (((coord % cs) + cs) % cs) | 0
+        }
+
     }
 
-    // internals
-    this._chunkIDsToAdd = []
-    this._chunkIDsToRemove = []
-    this._chunkIDsInMemory = []
-    this._chunkIDsToCreate = []
-    this._chunkIDsToMesh = []
-    this._chunkIDsToMeshFirst = []
-    this._maxChunksPendingCreation = 20
-    this._maxChunksPendingMeshing = 20
-    this._maxProcessingPerTick = 9 // ms
-    this._maxProcessingPerRender = 5 // ms
+    /*
+     *   PUBLIC API 
+     */
 
-    // triggers a short visit to the meshing queue before renders
-    var self = this
-    noa.on('beforeRender', function () { beforeRender(self) })
 
-    // actual chunk storage - hash size hard coded for now
-    this._chunkHash = ndHash([1024, 1024, 1024])
 
-    // instantiate coord conversion functions based on the chunk size
-    // use bit twiddling if chunk size is a power of 2
-    var cs = this.chunkSize
-    if (cs & cs - 1 === 0) {
-        var shift = Math.log2(cs) | 0
-        var mask = (cs - 1) | 0
-        worldCoordToChunkCoord = coord => (coord >> shift) | 0
-        worldCoordToChunkIndex = coord => (coord & mask) | 0
-    } else {
-        worldCoordToChunkCoord = coord => Math.floor(coord / cs) | 0
-        worldCoordToChunkIndex = coord => (((coord % cs) + cs) % cs) | 0
+    /** @param x,y,z */
+    getBlockID(x, y, z) {
+        var chunk = this._getChunkByCoords(x, y, z)
+        if (!chunk) return 0
+
+        var ix = worldCoordToChunkIndex(x)
+        var iy = worldCoordToChunkIndex(y)
+        var iz = worldCoordToChunkIndex(z)
+        return chunk.get(ix, iy, iz)
     }
 
+    /** @param x,y,z */
+    getBlockSolidity(x, y, z) {
+        var chunk = this._getChunkByCoords(x, y, z)
+        if (!chunk) return 0
+
+        var ix = worldCoordToChunkIndex(x)
+        var iy = worldCoordToChunkIndex(y)
+        var iz = worldCoordToChunkIndex(z)
+        return !!chunk.getSolidityAt(ix, iy, iz)
+    }
+
+    /** @param x,y,z */
+    getBlockOpacity(x, y, z) {
+        var id = this.getBlockID(x, y, z)
+        return this.noa.registry.getBlockOpacity(id)
+    }
+
+    /** @param x,y,z */
+    getBlockFluidity(x, y, z) {
+        var id = this.getBlockID(x, y, z)
+        return this.noa.registry.getBlockFluidity(id)
+    }
+
+    /** @param x,y,z */
+    getBlockProperties(x, y, z) {
+        var id = this.getBlockID(x, y, z)
+        return this.noa.registry.getBlockProps(id)
+    }
+
+    /** @param x,y,z */
+    getBlockObjectMesh(x, y, z) {
+        var chunk = this._getChunkByCoords(x, y, z)
+        if (!chunk) return 0
+
+        var ix = worldCoordToChunkIndex(x)
+        var iy = worldCoordToChunkIndex(y)
+        var iz = worldCoordToChunkIndex(z)
+        return chunk.getObjectMeshAt(ix, iy, iz)
+    }
+
+    /** @param x,y,z */
+    setBlockID(val, x, y, z) {
+        var i = worldCoordToChunkCoord(x)
+        var j = worldCoordToChunkCoord(y)
+        var k = worldCoordToChunkCoord(z)
+        var ix = worldCoordToChunkIndex(x)
+        var iy = worldCoordToChunkIndex(y)
+        var iz = worldCoordToChunkIndex(z)
+
+        // if update is on chunk border, update neighbor's padding data too
+        _updateChunkAndBorders(this, i, j, k, this.chunkSize, ix, iy, iz, val)
+    }
+
+    /** @param x,y,z */
+    isBoxUnobstructed(box) {
+        var base = box.base
+        var max = box.max
+        for (var i = Math.floor(base[0]); i < max[0] + 1; i++) {
+            for (var j = Math.floor(base[1]); j < max[1] + 1; j++) {
+                for (var k = Math.floor(base[2]); k < max[2] + 1; k++) {
+                    if (this.getBlockSolidity(i, j, k)) return false
+                }
+            }
+        }
+        return true
+    }
+
+    tick() {
+        profile_hook('start')
+
+        // check player position and needed/unneeded chunks
+        var pos = getPlayerChunkCoords(this)
+        var chunkID = getChunkID(pos[0], pos[1], pos[2])
+        if (chunkID != this._lastPlayerChunkID) {
+            this.emit('playerEnteredChunk', pos[0], pos[1], pos[2])
+            buildChunkAddQueue(this, pos[0], pos[1], pos[2])
+            buildChunkRemoveQueue(this, pos[0], pos[1], pos[2])
+        }
+        this._lastPlayerChunkID = chunkID
+        profile_hook('build queues')
+
+        // process (create or mesh) some chunks. If fast enough, do several
+        profile_queues(this, 'start')
+        var cutoff = performance.now() + this._maxProcessingPerTick
+        var done = false
+        while (!done && (performance.now() < cutoff)) {
+            var d1 = processMeshingQueues(this, false)
+            var d2 = processChunkQueues(this)
+            if (!d2) d2 = processChunkQueues(this)
+            done = d1 && d2
+        }
+        profile_queues(this, 'end')
+
+
+        // track whether the player's local chunk is loaded and ready or not
+        var pChunk = getChunk(this, pos[0], pos[1], pos[2])
+        var okay = !!(pChunk && pChunk.isGenerated && !pChunk.isInvalid)
+        this.playerChunkLoaded = okay
+
+        profile_hook('end')
+    }
+
+    /** client should call this after creating a chunk's worth of data (as an ndarray)  
+     * If userData is passed in it will be attached to the chunk
+     * @param id
+     * @param array
+     * @param userData
+     */
+    setChunkData(id, array, userData) {
+        profile_queues(this, 'received')
+        var arr = parseChunkID(id)
+        var chunk = getChunk(this, arr[0], arr[1], arr[2])
+        // ignore if chunk was invalidated while being prepared
+        if (!chunk || chunk.isInvalid) return
+        chunk.array = array
+        if (userData) chunk.userData = userData
+        chunk.initData()
+        enqueueID(id, this._chunkIDsInMemory)
+        unenqueueID(id, this._chunkIDsToCreate)
+
+        // chunk can now be meshed...
+        this.noa.rendering.prepareChunkForRendering(chunk)
+        enqueueID(id, this._chunkIDsToMesh)
+        this.emit('chunkAdded', chunk)
+    }
+
+    /*
+     * Calling this causes all world chunks to get unloaded and recreated 
+     * (after receiving new world data from the client). This is useful when
+     * you're teleporting the player to a new world, e.g.
+     */
+    invalidateAllChunks() {
+        var toInval = this._chunkIDsInMemory.concat(this._chunkIDsToCreate)
+        for (var id of toInval) {
+            var loc = parseChunkID(id)
+            var chunk = getChunk(this, loc[0], loc[1], loc[2])
+            chunk.isInvalid = true
+        }
+        // this causes chunk queues to get rebuilt next tick
+        this._lastPlayerChunkID = ''
+    }
+
+    // debugging
+    report() {
+        console.log('World report - playerChunkLoaded: ', this.playerChunkLoaded)
+        _report(this, '  to add     ', this._chunkIDsToAdd)
+        _report(this, '  to remove: ', this._chunkIDsToRemove)
+        _report(this, '  in memory: ', this._chunkIDsInMemory, true)
+        _report(this, '  creating:  ', this._chunkIDsToCreate)
+        _report(this, '  meshing:   ', this._chunkIDsToMesh.concat(this._chunkIDsToMeshFirst))
+    }
+
+    // for internal use
+    _getChunkByCoords(x, y, z) {
+        var i = worldCoordToChunkCoord(x)
+        var j = worldCoordToChunkCoord(y)
+        var k = worldCoordToChunkCoord(z)
+        return getChunk(this, i, j, k)
+    }
 }
-World.prototype = Object.create(EventEmitter.prototype)
 
 var worldCoordToChunkCoord
 var worldCoordToChunkIndex
 
-
-
-
-/*
- *   PUBLIC API 
- */
-
-
-
-/** @param x,y,z */
-World.prototype.getBlockID = function (x, y, z) {
-    var chunk = this._getChunkByCoords(x, y, z)
-    if (!chunk) return 0
-
-    var ix = worldCoordToChunkIndex(x)
-    var iy = worldCoordToChunkIndex(y)
-    var iz = worldCoordToChunkIndex(z)
-    return chunk.get(ix, iy, iz)
-}
-
-/** @param x,y,z */
-World.prototype.getBlockSolidity = function (x, y, z) {
-    var chunk = this._getChunkByCoords(x, y, z)
-    if (!chunk) return 0
-
-    var ix = worldCoordToChunkIndex(x)
-    var iy = worldCoordToChunkIndex(y)
-    var iz = worldCoordToChunkIndex(z)
-    return !!chunk.getSolidityAt(ix, iy, iz)
-}
-
-/** @param x,y,z */
-World.prototype.getBlockOpacity = function (x, y, z) {
-    var id = this.getBlockID(x, y, z)
-    return this.noa.registry.getBlockOpacity(id)
-}
-
-/** @param x,y,z */
-World.prototype.getBlockFluidity = function (x, y, z) {
-    var id = this.getBlockID(x, y, z)
-    return this.noa.registry.getBlockFluidity(id)
-}
-
-/** @param x,y,z */
-World.prototype.getBlockProperties = function (x, y, z) {
-    var id = this.getBlockID(x, y, z)
-    return this.noa.registry.getBlockProps(id)
-}
-
-/** @param x,y,z */
-World.prototype.getBlockObjectMesh = function (x, y, z) {
-    var chunk = this._getChunkByCoords(x, y, z)
-    if (!chunk) return 0
-
-    var ix = worldCoordToChunkIndex(x)
-    var iy = worldCoordToChunkIndex(y)
-    var iz = worldCoordToChunkIndex(z)
-    return chunk.getObjectMeshAt(ix, iy, iz)
-}
-
-
-/** @param x,y,z */
-World.prototype.setBlockID = function (val, x, y, z) {
-    var i = worldCoordToChunkCoord(x)
-    var j = worldCoordToChunkCoord(y)
-    var k = worldCoordToChunkCoord(z)
-    var ix = worldCoordToChunkIndex(x)
-    var iy = worldCoordToChunkIndex(y)
-    var iz = worldCoordToChunkIndex(z)
-
-    // if update is on chunk border, update neighbor's padding data too
-    _updateChunkAndBorders(this, i, j, k, this.chunkSize, ix, iy, iz, val)
-}
-
-
-/** @param x,y,z */
-World.prototype.isBoxUnobstructed = function (box) {
-    var base = box.base
-    var max = box.max
-    for (var i = Math.floor(base[0]); i < max[0] + 1; i++) {
-        for (var j = Math.floor(base[1]); j < max[1] + 1; j++) {
-            for (var k = Math.floor(base[2]); k < max[2] + 1; k++) {
-                if (this.getBlockSolidity(i, j, k)) return false
-            }
-        }
-    }
-    return true
-}
-
-
-
-
-
-World.prototype.tick = function () {
-    profile_hook('start')
-
-    // check player position and needed/unneeded chunks
-    var pos = getPlayerChunkCoords(this)
-    var chunkID = getChunkID(pos[0], pos[1], pos[2])
-    if (chunkID != this._lastPlayerChunkID) {
-        this.emit('playerEnteredChunk', pos[0], pos[1], pos[2])
-        buildChunkAddQueue(this, pos[0], pos[1], pos[2])
-        buildChunkRemoveQueue(this, pos[0], pos[1], pos[2])
-    }
-    this._lastPlayerChunkID = chunkID
-    profile_hook('build queues')
-
-    // process (create or mesh) some chunks. If fast enough, do several
-    profile_queues(this, 'start')
-    var cutoff = performance.now() + this._maxProcessingPerTick
-    var done = false
-    while (!done && (performance.now() < cutoff)) {
-        var d1 = processMeshingQueues(this, false)
-        var d2 = processChunkQueues(this)
-        if (!d2) d2 = processChunkQueues(this)
-        done = d1 && d2
-    }
-    profile_queues(this, 'end')
-
-
-    // track whether the player's local chunk is loaded and ready or not
-    var pChunk = getChunk(this, pos[0], pos[1], pos[2])
-    var okay = !!(pChunk && pChunk.isGenerated && !pChunk.isInvalid)
-    this.playerChunkLoaded = okay
-
-    profile_hook('end')
-}
 
 
 
@@ -228,65 +279,10 @@ function beforeRender(self) {
 
 
 
-/** client should call this after creating a chunk's worth of data (as an ndarray)  
- * If userData is passed in it will be attached to the chunk
- * @param id
- * @param array
- * @param userData
- */
-World.prototype.setChunkData = function (id, array, userData) {
-    profile_queues(this, 'received')
-    var arr = parseChunkID(id)
-    var chunk = getChunk(this, arr[0], arr[1], arr[2])
-    // ignore if chunk was invalidated while being prepared
-    if (!chunk || chunk.isInvalid) return
-    chunk.array = array
-    if (userData) chunk.userData = userData
-    chunk.initData()
-    enqueueID(id, this._chunkIDsInMemory)
-    unenqueueID(id, this._chunkIDsToCreate)
-
-    // chunk can now be meshed...
-    this.noa.rendering.prepareChunkForRendering(chunk)
-    enqueueID(id, this._chunkIDsToMesh)
-    this.emit('chunkAdded', chunk)
-}
-
-
-
-
-/*
- * Calling this causes all world chunks to get unloaded and recreated 
- * (after receiving new world data from the client). This is useful when
- * you're teleporting the player to a new world, e.g.
- */
-World.prototype.invalidateAllChunks = function () {
-    var toInval = this._chunkIDsInMemory.concat(this._chunkIDsToCreate)
-    for (var id of toInval) {
-        var loc = parseChunkID(id)
-        var chunk = getChunk(this, loc[0], loc[1], loc[2])
-        chunk.isInvalid = true
-    }
-    // this causes chunk queues to get rebuilt next tick
-    this._lastPlayerChunkID = ''
-}
-
-
-
-// debugging
-World.prototype.report = function () {
-    console.log('World report - playerChunkLoaded: ', this.playerChunkLoaded)
-    _report(this, '  to add     ', this._chunkIDsToAdd)
-    _report(this, '  to remove: ', this._chunkIDsToRemove)
-    _report(this, '  in memory: ', this._chunkIDsInMemory, true)
-    _report(this, '  creating:  ', this._chunkIDsToCreate)
-    _report(this, '  meshing:   ', this._chunkIDsToMesh.concat(this._chunkIDsToMeshFirst))
-}
-
 function _report(world, name, arr, ext) {
-    var ct = 0,
-        full = 0,
-        empty = 0
+    var ct = 0
+    var full = 0
+    var empty = 0
     for (var id of arr) {
         if (id.size) {
             if (id.isInvalid) ct++
@@ -348,15 +344,6 @@ function getPlayerChunkCoords(world) {
     var j = worldCoordToChunkCoord(pos[1])
     var k = worldCoordToChunkCoord(pos[2])
     return [i, j, k]
-}
-
-
-// for internal use
-World.prototype._getChunkByCoords = function (x, y, z) {
-    var i = worldCoordToChunkCoord(x)
-    var j = worldCoordToChunkCoord(y)
-    var k = worldCoordToChunkCoord(z)
-    return getChunk(this, i, j, k)
 }
 
 
@@ -582,14 +569,24 @@ function unenqueueID(id, queue) {
 
 
 
-var profile_queues = function (w, s) {}
-if (PROFILE_QUEUES)(function () {
+var profile_queues = (w, s) => {}
+if (PROFILE_QUEUES)(() => {
     var every = 100
     var iter = 0
-    var t, nrem, nreq, totalrec, nmesh
-    var reqcts, remcts, meshcts
-    var qadd, qrem, qmem, qgen, qmesh
-    profile_queues = function (world, state) {
+    var t
+    var nrem
+    var nreq
+    var totalrec
+    var nmesh
+    var reqcts
+    var remcts
+    var meshcts
+    var qadd
+    var qrem
+    var qmem
+    var qgen
+    var qmesh
+    profile_queues = (world, state) => {
         if (state === 'start') {
             if (iter === 0) {
                 t = performance.now()
@@ -640,16 +637,16 @@ if (PROFILE_QUEUES)(function () {
             }
         }
     }
-    var sum = function (num, prev) { return num + prev }
-    var rnd = function (n) { return Math.round(n * 10) / 10 }
+    var sum = (num, prev) => num + prev
+    var rnd = n => Math.round(n * 10) / 10
 })()
 
 
-var profile_hook = function (s) {}
-if (PROFILE)(function () {
+var profile_hook = s => {}
+if (PROFILE)(() => {
     var every = 200
-    var timer = new(require('./util').Timer)(every, 'world ticks')
-    profile_hook = function (state) {
+    var timer = new(Timer)(every, 'world ticks')
+    profile_hook = state => {
         if (state === 'start') timer.start()
         else if (state === 'end') timer.report()
         else timer.add(state)

@@ -1,9 +1,7 @@
-'use strict'
+import Constants from './constants'
+import { Timer } from './util'
 
-
-
-
-module.exports = new TerrainMesher()
+export default new TerrainMesher()
 
 
 
@@ -33,7 +31,7 @@ function TerrainMesher() {
      * 
      */
 
-    this.meshChunk = function (chunk, matGetter, colGetter, ignoreMaterials, useAO, aoVals, revAoVal) {
+    this.meshChunk = (chunk, matGetter, colGetter, ignoreMaterials, useAO, aoVals, revAoVal) => {
         profile_hook('start')
         var noa = chunk.noa
 
@@ -72,21 +70,23 @@ function TerrainMesher() {
  * 
  */
 
-function Submesh(id) {
-    this.id = id | 0
-    this.positions = []
-    this.indices = []
-    this.normals = []
-    this.colors = []
-    this.uvs = []
-}
+class Submesh {
+    constructor(id) {
+        this.id = id | 0
+        this.positions = []
+        this.indices = []
+        this.normals = []
+        this.colors = []
+        this.uvs = []
+    }
 
-Submesh.prototype.dispose = function () {
-    this.positions = null
-    this.indices = null
-    this.normals = null
-    this.colors = null
-    this.uvs = null
+    dispose() {
+        this.positions = null
+        this.indices = null
+        this.normals = null
+        this.colors = null
+        this.uvs = null
+    }
 }
 
 
@@ -109,11 +109,11 @@ function MeshBuilder() {
 
 
     // core
-    this.build = function (chunk, meshdata, ignoreMaterials) {
+    this.build = (chunk, meshdata, ignoreMaterials) => {
         noa = chunk.noa
 
         // preprocess meshdata entries to merge those that will use default terrain material
-        var mergeCriteria = function (mdat) {
+        var mergeCriteria = mdat => {
             if (ignoreMaterials) return true
             if (mdat.renderMat) return false
             var url = noa.registry.getMaterialTexture(mdat.id)
@@ -149,11 +149,11 @@ function MeshBuilder() {
     // this version builds a parent mesh + child meshes, rather than
     // one big mesh with submeshes and a multimaterial.
     // This should be obsolete, unless the first one has problems..
-    this.buildWithoutMultimats = function (chunk, meshdata, ignoreMaterials) {
+    this.buildWithoutMultimats = (chunk, meshdata, ignoreMaterials) => {
         noa = chunk.noa
 
         // preprocess meshdata entries to merge those that use default terrain material
-        var mergeCriteria = function (mdat) {
+        var mergeCriteria = mdat => {
             if (ignoreMaterials) return true
             if (mdat.renderMat) return false
             var url = noa.registry.getMaterialTexture(mdat.id)
@@ -237,9 +237,9 @@ function MeshBuilder() {
 
         return {
             mergedID: targetID,
-            vertices: vertices,
-            indices: indices,
-            matIDs: matIDs,
+            vertices,
+            indices,
+            matIDs,
         }
     }
 
@@ -368,7 +368,7 @@ function MeshBuilder() {
 function GreedyMesher() {
 
     // data representation constants
-    var constants = require('./constants')
+    var constants = Constants
 
     var ID_MASK = constants.ID_MASK
     // var VAR_MASK = constants.VAR_MASK // NYI
@@ -383,7 +383,7 @@ function GreedyMesher() {
 
 
 
-    this.mesh = function (arr, getMaterial, getColor, doAO, aoValues, revAoVal) {
+    this.mesh = (arr, getMaterial, getColor, doAO, aoValues, revAoVal) => {
 
         // return object, holder for Submeshes
         var subMeshes = {}
@@ -848,11 +848,11 @@ function GreedyMesher() {
 
 
 
-var profile_hook = (function () {
-    if (!PROFILE) return function () {}
+var profile_hook = (() => {
+    if (!PROFILE) return () => {}
     var every = 50
-    var timer = new(require('./util').Timer)(every, 'Terrain meshing')
-    return function (state) {
+    var timer = new(Timer)(every, 'Terrain meshing')
+    return state => {
         if (state === 'start') timer.start()
         else if (state === 'end') timer.report()
         else timer.add(state)

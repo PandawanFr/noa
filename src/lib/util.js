@@ -1,16 +1,5 @@
-'use strict'
-
-
-module.exports = {
-    Timer: Timer,
-    removeUnorderedListItem: removeUnorderedListItem,
-}
-
-
-
-
 // helper to swap item to end and pop(), instead of splice()ing
-function removeUnorderedListItem(list, item) {
+export function removeUnorderedListItem(list, item) {
     var i = list.indexOf(item)
     if (i < 0) { return }
     if (i === list.length - 1) {
@@ -24,7 +13,7 @@ function removeUnorderedListItem(list, item) {
 
 
 // simple thing for reporting time split up between several activities
-function Timer(_every, _title) {
+export function Timer(_every, _title) {
     var title = _title || ''
     var every = _every || 1
     var times = []
@@ -35,7 +24,7 @@ function Timer(_every, _title) {
     var total = 0
     var clearNext = true
 
-    this.start = function () {
+    this.start = () => {
         if (clearNext) {
             times.length = names.length = 0
             clearNext = false
@@ -43,7 +32,7 @@ function Timer(_every, _title) {
         started = last = performance.now()
         iter++
     }
-    this.add = function (name) {
+    this.add = name => {
         var t = performance.now()
         if (names.indexOf(name) < 0) names.push(name)
         var i = names.indexOf(name)
@@ -51,13 +40,11 @@ function Timer(_every, _title) {
         times[i] += t - last
         last = t
     }
-    this.report = function () {
+    this.report = () => {
         total += performance.now() - started
         if (iter === every) {
             var head = title + ' total ' + (total / every).toFixed(2) + 'ms (avg, ' + every + ' runs)    '
-            console.log(head, names.map(function (name, i) {
-                return name + ': ' + (times[i] / every).toFixed(2) + 'ms    '
-            }).join(''))
+            console.log(head, names.map((name, i) => name + ': ' + (times[i] / every).toFixed(2) + 'ms    ').join(''))
             clearNext = true
             iter = 0
             total = 0
