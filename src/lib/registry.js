@@ -127,8 +127,11 @@ export default class Registry {
         this.getMaterialData = matID => this._matData[matID]
 
         /**
-         * look up material ID given its name
-         * if lazy is set, pre-register the name and return an ID
+         * Look up material ID given its name
+         * If lazy is set, pre-register the name and return an ID
+         * @param {string} name The name of the material
+         * @param {boolean} lazyInit Whether or not to initialize lazily
+         * @returns {number} The material's id
          */
         this.getMaterialId = (matIDs, name, lazyInit) => {
             if (!name) return 0
@@ -136,8 +139,6 @@ export default class Registry {
             if (id === undefined && lazyInit) id = this.registerMaterial(name)
             return id
         }
-
-
 
         /*
          * 
@@ -263,6 +264,7 @@ export default class Registry {
      * @param textureURL
      * @param texHasAlpha
      * @param renderMaterial an optional BABYLON material to be used for block faces with this block material
+     * @returns {number}
      */
 
     registerMaterial(name, color, textureURL, texHasAlpha, renderMaterial) {
