@@ -20,8 +20,8 @@ export default function (noa) {
         onRemove: null,
 
         system: function fadeOnZoomProc(dt, states) {
-            var zoom = noa.rendering._currentZoom
-            var ents = noa.entities
+            const zoom = noa.rendering._currentZoom
+            const ents = noa.entities
             states.forEach(state => {
                 checkZoom(state, state.__id, zoom, ents)
             })
@@ -34,7 +34,7 @@ function checkZoom(state, id, zoom, ents) {
     if (!ents.hasMesh(id)) return
 
     if (state._showing && zoom < state.cutoff || !state._showing && zoom > state.cutoff) {
-        var mesh = ents.getMeshData(id).mesh
+        const mesh = ents.getMeshData(id).mesh
         mesh.visibility = state._showing = (zoom > state.cutoff)
     }
 }

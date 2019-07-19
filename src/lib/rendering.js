@@ -9,17 +9,17 @@ if (!BABYLON) {
     throw new Error('Babylon.js reference not found! Abort! Abort!')
 }
 
-var vec3 = BABYLON.Vector3 // not a gl-vec3, in this module only!!
-var col3 = BABYLON.Color3
+const vec3 = BABYLON.Vector3 // not a gl-vec3, in this module only!!
+const col3 = BABYLON.Color3
 
 
 
 // profiling flags
-var PROFILE = 0
+const PROFILE = 0
 
 
 
-var defaults = {
+const defaults = {
     showFPS: false,
     antiAlias: true,
     clearColor: [0.8, 0.9, 1],
@@ -122,13 +122,13 @@ export default class Rendering {
     }
 
     highlightBlockFace(show, posArr, normArr) {
-        var m = getHighlightMesh(this)
+        const m = getHighlightMesh(this)
         if (show) {
             // bigger slop when zoomed out
-            var dist = this._currentZoom + glvec3.distance(this.noa.getPlayerEyePosition(), posArr)
-            var slop = 0.001 + 0.001 * dist
-            var pos = _highlightPos
-            for (var i = 0; i < 3; ++i) {
+            const dist = this._currentZoom + glvec3.distance(this.noa.getPlayerEyePosition(), posArr)
+            const slop = 0.001 + 0.001 * dist
+            const pos = _highlightPos
+            for (let i = 0; i < 3; ++i) {
                 pos[i] = Math.floor(posArr[i]) + .5 + ((0.5 + slop) * normArr[i])
             }
             m.position.copyFromFloats(pos[0], pos[1], pos[2])
@@ -150,12 +150,12 @@ export default class Rendering {
 
     /** @method */
     getCameraRotation() {
-        var rot = this._rotationHolder.rotation
+        const rot = this._rotationHolder.rotation
         return [rot.x, rot.y]
     }
 
     setCameraRotation(x, y) {
-        var rot = this._rotationHolder.rotation
+        const rot = this._rotationHolder.rotation
         rot.x = Math.max(-this._maxCamAngle, Math.min(this._maxCamAngle, x))
         rot.y = y
     }
@@ -170,8 +170,8 @@ export default class Rendering {
         if (mesh._currentNoaChunk || this._octree.dynamicContent.includes(mesh)) {
             return
         }
-        var pos = mesh.position
-        var chunk = this.noa.world._getChunkByCoords(pos.x, pos.y, pos.z)
+        const pos = mesh.position
+        const chunk = this.noa.world._getChunkByCoords(pos.x, pos.y, pos.z)
         if (this._dynamicMeshOctrees && chunk && chunk.octreeBlock) {
             // add to an octree
             chunk.octreeBlock.entries.push(mesh)
@@ -183,7 +183,7 @@ export default class Rendering {
         // remember for updates if it's not static
         if (!isStatic) this._dynamicMeshes.push(mesh)
         // handle remover when mesh gets disposed
-        var remover = this.removeMeshFromScene.bind(this, mesh)
+        const remover = this.removeMeshFromScene.bind(this, mesh)
         mesh.onDisposeObservable.add(remover)
     }
 
@@ -200,7 +200,7 @@ export default class Rendering {
     }
 
     makeMeshInstance(mesh, isStatic) {
-        var m = mesh.createInstance(`${mesh.name} instance` || 'instance')
+        const m = mesh.createInstance(`${mesh.name} instance` || 'instance')
         if (mesh.billboardMode) m.billboardMode = mesh.billboardMode
         // add to scene so as to render
         this.addMeshToScene(m, isStatic)
@@ -221,7 +221,7 @@ export default class Rendering {
     // Create a default standardMaterial:
     //      flat, nonspecular, fully reflects diffuse and ambient light
     makeStandardMaterial(name) {
-        var mat = new BABYLON.StandardMaterial(name, this._scene)
+        const mat = new BABYLON.StandardMaterial(name, this._scene)
         mat.specularColor.copyFromFloats(0, 0, 0)
         mat.ambientColor.copyFromFloats(1, 1, 1)
         mat.diffuseColor.copyFromFloats(1, 1, 1)
@@ -237,9 +237,9 @@ export default class Rendering {
      */
 
     prepareChunkForRendering(chunk) {
-        var cs = chunk.size
-        var min = new vec3(chunk.x, chunk.y, chunk.z)
-        var max = new vec3(chunk.x + cs, chunk.y + cs, chunk.z + cs)
+        const cs = chunk.size
+        const min = new vec3(chunk.x, chunk.y, chunk.z)
+        const max = new vec3(chunk.x + cs, chunk.y + cs, chunk.z + cs)
         chunk.octreeBlock = new BABYLON.OctreeBlock(min, max, undefined, undefined, undefined, $ => {})
         this._octree.blocks.push(chunk.octreeBlock)
     }
@@ -270,12 +270,12 @@ export default class Rendering {
      */
 
     debug_SceneCheck() {
-        var meshes = this._scene.meshes
-        var dyns = this._octree.dynamicContent
-        var octs = []
-        var numOcts = 0
-        var mats = this._scene.materials
-        var allmats = []
+        const meshes = this._scene.meshes
+        const dyns = this._octree.dynamicContent
+        const octs = []
+        let numOcts = 0
+        const mats = this._scene.materials
+        const allmats = []
         mats.forEach(mat => {
             if (mat.subMaterials) mat.subMaterials.forEach(mat => allmats.push(mat))
             else allmats.push(mat)
@@ -293,9 +293,9 @@ export default class Rendering {
                 if (missing(mat, mats)) warn(mat, 'mesh material not in scene')
             })
         })
-        var unusedMats = []
+        const unusedMats = []
         allmats.forEach(mat => {
-            var used = false
+            let used = false
             meshes.forEach(mesh => {
                 if (mesh.material === mat) used = true
                 if (!mesh.material || !mesh.material.subMaterials) return
@@ -312,7 +312,7 @@ export default class Rendering {
         octs.forEach(m => {
             if (missing(m, meshes)) warn(m, 'octree block mesh not in scene')
         })
-        var avgPerOct = Math.round(10 * octs.length / numOcts) / 10
+        const avgPerOct = Math.round(10 * octs.length / numOcts) / 10
         console.log('meshes - octree:', octs.length, '  dynamic:', dyns.length,
             '   avg meshes/octreeBlock:', avgPerOct)
 
@@ -330,9 +330,9 @@ export default class Rendering {
     }
 
     debug_MeshCount() {
-        var ct = {}
+        const ct = {}
         this._scene.meshes.forEach(m => {
-            var n = m.name || ''
+            let n = m.name || ''
             n = n.replace(/-\d+.*/, '#')
             n = n.replace(/\d+.*/, '#')
             n = n.replace(/(rotHolder|camHolder|camScreen)/, 'rendering use')
@@ -340,7 +340,7 @@ export default class Rendering {
             ct[n] = ct[n] || 0
             ct[n]++
         })
-        for (var s in ct) console.log(`   ${(`${ct[s]}       `).substr(0, 7)}${s}`)
+        for (const s in ct) console.log(`   ${(`${ct[s]}       `).substr(0, 7)}${s}`)
     }
 }
 
@@ -354,7 +354,7 @@ function initScene(self, canvas, opts) {
         preserveDrawingBuffer: opts.preserveDrawingBuffer,
     })
     self._scene = new BABYLON.Scene(self._engine)
-    var scene = self._scene
+    const scene = self._scene
     // remove built-in listeners
     scene.detachControl()
 
@@ -412,12 +412,12 @@ var zero = vec3.Zero()
 
 // runs once per tick - move any dynamic meshes to correct chunk octree
 function updateDynamicMeshOctrees(self) {
-    for (var i = 0; i < self._dynamicMeshes.length; i++) {
-        var mesh = self._dynamicMeshes[i]
+    for (let i = 0; i < self._dynamicMeshes.length; i++) {
+        const mesh = self._dynamicMeshes[i]
         if (mesh._isDisposed) continue // shouldn't be possible
-        var pos = mesh.position
-        var prev = mesh._currentNoaChunk || null
-        var next = self.noa.world._getChunkByCoords(pos.x, pos.y, pos.z) || null
+        const pos = mesh.position
+        const prev = mesh._currentNoaChunk || null
+        const next = self.noa.world._getChunkByCoords(pos.x, pos.y, pos.z) || null
         if (prev === next) continue
         // mesh has moved chunks since last update
         // remove from previous location...
@@ -464,18 +464,18 @@ function updateDynamicMeshOctrees(self) {
 // along the negative camera vector
 
 function cameraObstructionDistance(self) {
-    var size = 0.2
+    const size = 0.2
     if (!_camBox) {
         _camBox = new aabb([0, 0, 0], [size * 2, size * 2, size * 2])
         _getVoxel = (x, y, z) => self.noa.world.getBlockSolidity(x, y, z)
     }
 
-    var pos = self._cameraHolder.position
+    const pos = self._cameraHolder.position
     glvec3.set(_posVec, pos.x - size, pos.y - size, pos.z - size)
     _camBox.setPosition(_posVec)
 
-    var dist = -self.zoomDistance
-    var cam = self.getCameraVector()
+    const dist = -self.zoomDistance
+    const cam = self.getCameraVector()
     glvec3.set(_camVec, dist * cam.x, dist * cam.y, dist * cam.z)
 
     return sweep(_getVoxel, _camBox, _camVec, (dist, axis, dir, vec) => true, true)
@@ -494,12 +494,12 @@ var _getVoxel
 function updateCamera(self) {
     // update cameraHolder pos/rot from rotation holder and target entity
     self._cameraHolder.rotation.copyFrom(self._rotationHolder.rotation)
-    var cpos = self.noa.ents.getPositionData(self.cameraTarget).renderPosition
+    const cpos = self.noa.ents.getPositionData(self.cameraTarget).renderPosition
     self._cameraHolder.position.copyFromFloats(cpos[0], cpos[1], cpos[2])
 
     // check obstructions and tween camera towards clipped position
-    var dist = self.zoomDistance
-    var speed = self._cameraZoomSpeed
+    let dist = self.zoomDistance
+    const speed = self._cameraZoomSpeed
     if (dist > 0) {
         dist = cameraObstructionDistance(self)
         if (dist < self._currentZoom) self._currentZoom = dist
@@ -508,8 +508,8 @@ function updateCamera(self) {
     self._camera.position.z = -self._currentZoom
 
     // check id of block camera is in for overlay effects (e.g. being in water) 
-    var cam = self.getCameraPosition()
-    var id = self.noa.world.getBlockID(Math.floor(cam.x), Math.floor(cam.y), Math.floor(cam.z))
+    const cam = self.getCameraPosition()
+    const id = self.noa.world.getBlockID(Math.floor(cam.x), Math.floor(cam.y), Math.floor(cam.z))
     checkCameraEffect(self, id)
 }
 
@@ -522,11 +522,11 @@ function checkCameraEffect(self, id) {
     if (id === 0) {
         self._camScreen.setEnabled(false)
     } else {
-        var matId = self.noa.registry.getBlockFaceMaterial(id, 0)
+        const matId = self.noa.registry.getBlockFaceMaterial(id, 0)
         if (matId) {
-            var matData = self.noa.registry.getMaterialData(matId)
-            var col = matData.color
-            var alpha = matData.alpha
+            const matData = self.noa.registry.getMaterialData(matId)
+            const col = matData.color
+            const alpha = matData.alpha
             if (col && alpha && alpha < 1) {
                 self._camScreenMat.diffuseColor = new col3(col[0], col[1], col[2])
                 self._camScreenMat.alpha = alpha
@@ -544,18 +544,18 @@ function checkCameraEffect(self, id) {
 
 // make or get a mesh for highlighting active voxel
 function getHighlightMesh(rendering) {
-    var m = rendering._highlightMesh
+    let m = rendering._highlightMesh
     if (!m) {
-        var mesh = BABYLON.Mesh.CreatePlane("highlight", 1.0, rendering._scene)
-        var hlm = rendering.makeStandardMaterial('highlightMat')
+        const mesh = BABYLON.Mesh.CreatePlane("highlight", 1.0, rendering._scene)
+        const hlm = rendering.makeStandardMaterial('highlightMat')
         hlm.backFaceCulling = false
         hlm.emissiveColor = new col3(1, 1, 1)
         hlm.alpha = 0.2
         mesh.material = hlm
         m = rendering._highlightMesh = mesh
         // outline
-        var s = 0.5
-        var lines = BABYLON.Mesh.CreateLines("hightlightLines", [
+        const s = 0.5
+        const lines = BABYLON.Mesh.CreateLines("hightlightLines", [
             new vec3(s, s, 0),
             new vec3(s, -s, 0),
             new vec3(-s, -s, 0),
@@ -581,8 +581,8 @@ function getHighlightMesh(rendering) {
 
 var profile_hook = (() => {
     if (!PROFILE) return () => {}
-    var every = 200
-    var timer = new(Timer)(every, 'render internals')
+    const every = 200
+    const timer = new(Timer)(every, 'render internals')
     return state => {
         if (state === 'start') timer.start()
         else if (state === 'end') timer.report()
@@ -595,27 +595,27 @@ var profile_hook = (() => {
 var fps_hook = () => {}
 
 function setUpFPS() {
-    var div = document.createElement('div')
+    const div = document.createElement('div')
     div.id = 'noa_fps'
-    var style = 'position:absolute; top:0; right:0; z-index:0;'
+    let style = 'position:absolute; top:0; right:0; z-index:0;'
     style += 'color:white; background-color:rgba(0,0,0,0.5);'
     style += 'font:14px monospace; text-align:center;'
     style += 'min-width:2em; margin:4px;'
     div.style = style
     document.body.appendChild(div)
-    var every = 1000
-    var ct = 0
-    var longest = 0
-    var start = performance.now()
-    var last = start
+    const every = 1000
+    let ct = 0
+    let longest = 0
+    let start = performance.now()
+    let last = start
     fps_hook = () => {
         ct++
-        var nt = performance.now()
+        const nt = performance.now()
         if (nt - last > longest) longest = nt - last
         last = nt
         if (nt - start < every) return
-        var fps = Math.round(ct / (nt - start) * 1000)
-        var min = Math.round(1 / longest * 1000)
+        const fps = Math.round(ct / (nt - start) * 1000)
+        const min = Math.round(1 / longest * 1000)
         div.innerHTML = `${fps}<br>${min}`
         ct = 0
         longest = 0

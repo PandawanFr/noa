@@ -21,11 +21,11 @@ import objectMesher from './objectMesher'
 
 
 // data representation
-var ID_MASK = constants.ID_MASK
+const ID_MASK = constants.ID_MASK
 // var VAR_MASK = constants.VAR_MASK // NYI
-var SOLID_BIT = constants.SOLID_BIT
-var OPAQUE_BIT = constants.OPAQUE_BIT
-var OBJECT_BIT = constants.OBJECT_BIT
+const SOLID_BIT = constants.SOLID_BIT
+const OPAQUE_BIT = constants.OPAQUE_BIT
+const OBJECT_BIT = constants.OBJECT_BIT
 
 
 
@@ -51,8 +51,8 @@ export default class Chunk {
         this.isFull = false
 
         // packed data storage
-        var s = size + 2 // 1 block of padding on each side
-        var arr = new Uint16Array(s * s * s)
+        const s = size + 2 // 1 block of padding on each side
+        const arr = new Uint16Array(s * s * s)
         this.array = new ndarray(arr, [s, s, s])
         this.i = i
         this.j = j
@@ -94,12 +94,12 @@ export default class Chunk {
     }
 
     set(x, y, z, id) {
-        var oldID = this._unpaddedView.get(x, y, z)
-        var oldIDnum = oldID & ID_MASK
+        const oldID = this._unpaddedView.get(x, y, z)
+        const oldIDnum = oldID & ID_MASK
         if (id === oldIDnum) return
 
         // manage data
-        var newID = packID(id)
+        const newID = packID(id)
         this._unpaddedView.set(x, y, z, newID)
 
         // handle object meshes
@@ -128,7 +128,7 @@ export default class Chunk {
     updateMeshes() {
         if (this._terrainDirty) {
             this.noa.rendering.removeTerrainMesh(this)
-            var mesh = this.mesh()
+            const mesh = this.mesh()
             if (mesh) this.noa.rendering.addTerrainMesh(this, mesh)
             this._terrainDirty = false
         }
@@ -151,35 +151,35 @@ export default class Chunk {
         // remake other views, assuming that data has changed
         rebuildArrayViews(this)
         // flags for tracking if chunk is entirely opaque or transparent
-        var fullyOpaque = OPAQUE_BIT
-        var fullyAir = true
+        let fullyOpaque = OPAQUE_BIT
+        let fullyAir = true
 
         // init everything in one big scan
-        var arr = this.array
-        var data = arr.data
-        var len = arr.shape[0]
-        var kstride = arr.stride[2]
-        for (var i = 0; i < len; ++i) {
-            var edge1 = (i === 0 || i === len - 1)
-            for (var j = 0; j < len; ++j) {
-                var d0 = arr.index(i, j, 0)
-                var edge2 = edge1 || (j === 0 || j === len - 1)
-                for (var k = 0; k < len; ++k, d0 += kstride) {
+        const arr = this.array
+        const data = arr.data
+        const len = arr.shape[0]
+        const kstride = arr.stride[2]
+        for (let i = 0; i < len; ++i) {
+            const edge1 = (i === 0 || i === len - 1)
+            for (let j = 0; j < len; ++j) {
+                let d0 = arr.index(i, j, 0)
+                const edge2 = edge1 || (j === 0 || j === len - 1)
+                for (let k = 0; k < len; ++k, d0 += kstride) {
                     // pull raw ID - could in principle be packed, so mask it
-                    var id = data[d0] & ID_MASK
+                    const id = data[d0] & ID_MASK
                     // skip air blocks
                     if (id === 0) {
                         fullyOpaque = 0
                         continue
                     }
                     // store ID as packed internal representation
-                    var packed = packID(id) | 0
+                    const packed = packID(id) | 0
                     data[d0] = packed
                     // track whether chunk is entirely full or empty
                     fullyOpaque &= packed
                     fullyAir = false
                     // within unpadded view, handle object blocks and handlers
-                    var atEdge = edge2 || (k === 0 || k === len - 1)
+                    const atEdge = edge2 || (k === 0 || k === len - 1)
                     if (!atEdge) {
                         if (OBJECT_BIT & packed) {
                             addObjectBlock(this, id, i - 1, j - 1, k - 1)
@@ -219,10 +219,10 @@ export default class Chunk {
 
 
 // Registry lookup references shared by all chunks
-var solidLookup
-var opaqueLookup
-var objectMeshLookup
-var blockHandlerLookup
+let solidLookup
+let opaqueLookup
+let objectMeshLookup
+let blockHandlerLookup
 
 function setBlockLookups(noa) {
     solidLookup = noa.registry._solidityLookup
@@ -239,12 +239,12 @@ function setBlockLookups(noa) {
 // helper to call handler of a given type at a particular xyz
 
 function callBlockHandler(chunk, blockID, type, x, y, z) {
-    var hobj = blockHandlerLookup[blockID]
+    const hobj = blockHandlerLookup[blockID]
     if (!hobj) return
-    var handler = hobj[type]
+    const handler = hobj[type]
     if (!handler) return
     // ignore all handlers if block is in chunk's edge padding blocks
-    var s = chunk.size
+    const s = chunk.size
     if (x < 0 || y < 0 || z < 0 || x >= s || y >= s || z >= s) return
     handler(chunk.x + x, chunk.y + y, chunk.z + z)
 }
@@ -265,7 +265,7 @@ function isTerrain(id) {
 
 // helper to pack a block ID into the internally stored form, given lookup tables
 function packID(id) {
-    var newID = id
+    let newID = id
     if (solidLookup[id]) newID |= SOLID_BIT
     if (opaqueLookup[id]) newID |= OPAQUE_BIT
     if (objectMeshLookup[id]) newID |= OBJECT_BIT
@@ -282,8 +282,8 @@ function packID(id) {
 // helper to rebuild several transformed views on the data array
 
 function rebuildArrayViews(chunk) {
-    var arr = chunk.array
-    var size = chunk.size
+    const arr = chunk.array
+    const size = chunk.size
     chunk._unpaddedView = arr.lo(1, 1, 1).hi(size, size, size)
 }
 
@@ -308,17 +308,17 @@ function removeObjectBlock(chunk, x, y, z) {
 // helper to call a given handler for all blocks in the chunk
 
 function callAllBlockHandlers(chunk, type) {
-    var view = chunk._unpaddedView
-    var data = view.data
-    var si = view.stride[0]
-    var sj = view.stride[1]
-    var sk = view.stride[2]
-    var size = view.shape[0]
-    var d0 = view.offset
-    for (var i = 0; i < size; ++i) {
-        for (var j = 0; j < size; ++j) {
-            for (var k = 0; k < size; ++k) {
-                var id = ID_MASK & data[d0]
+    const view = chunk._unpaddedView
+    const data = view.data
+    const si = view.stride[0]
+    const sj = view.stride[1]
+    const sk = view.stride[2]
+    const size = view.shape[0]
+    let d0 = view.offset
+    for (let i = 0; i < size; ++i) {
+        for (let j = 0; j < size; ++j) {
+            for (let k = 0; k < size; ++k) {
+                const id = ID_MASK & data[d0]
                 callBlockHandler(chunk, id, type, i, j, k)
                 d0 += sk
             }

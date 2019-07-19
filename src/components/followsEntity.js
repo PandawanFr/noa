@@ -19,7 +19,7 @@ export default function (noa) {
         },
 
         onAdd: function (eid, state) {
-            var off = vec3.create()
+            const off = vec3.create()
             state.offset = (state.offset) ? vec3.copy(off, state.offset) : off
             updatePosition(state)
             updateRenderPosition(state)
@@ -47,9 +47,9 @@ export default function (noa) {
 
 
     function updatePosition(state) {
-        var id = state.__id
-        var self = noa.ents.getPositionData(id)
-        var other = noa.ents.getPositionData(state.entity)
+        const id = state.__id
+        const self = noa.ents.getPositionData(id)
+        const other = noa.ents.getPositionData(state.entity)
         if (other) {
             vec3.add(self.position, other.position, state.offset)
             self._extentsChanged = true
@@ -59,9 +59,9 @@ export default function (noa) {
     }
 
     function updateRenderPosition(state) {
-        var id = state.__id
-        var self = noa.ents.getPositionData(id)
-        var other = noa.ents.getPositionData(state.entity)
+        const id = state.__id
+        const self = noa.ents.getPositionData(id)
+        const other = noa.ents.getPositionData(state.entity)
         if (other) {
             vec3.add(self.renderPosition, other.renderPosition, state.offset)
         } else {

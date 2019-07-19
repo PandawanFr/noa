@@ -1,4 +1,4 @@
-var defaults = {
+const defaults = {
     rotationScaleX: 0.0025,
     rotationScaleY: 0.0025,
     inverseY: false,
@@ -38,19 +38,19 @@ export default class CameraController {
 
     updateForRender() {
         // input state
-        var state = this.noa.inputs.state
+        const state = this.noa.inputs.state
 
         // TODO: REMOVE EVENTUALLY
         bugFix(state)
 
         // Rotation: translate dx/dy inputs into y/x axis camera angle changes
-        var dx = this.rotationScaleY * state.dy * ((this.inverseY) ? -1 : 1)
-        var dy = this.rotationScaleX * state.dx
+        const dx = this.rotationScaleY * state.dy * ((this.inverseY) ? -1 : 1)
+        const dy = this.rotationScaleX * state.dx
 
         // normalize/clamp/update
-        var camrot = this.noa.rendering.getCameraRotation() // [x,y]
-        var rotX = clamp(camrot[0] + dx, rotXcutoff)
-        var rotY = (camrot[1] + dy) % (Math.PI * 2)
+        const camrot = this.noa.rendering.getCameraRotation() // [x,y]
+        const rotX = clamp(camrot[0] + dx, rotXcutoff)
+        const rotY = (camrot[1] + dy) % (Math.PI * 2)
         this.noa.rendering.setCameraRotation(rotX, rotY)
 
     }
@@ -67,12 +67,12 @@ function clamp(value, to) {
 // workaround for this Chrome 63 + Win10 bug
 // https://bugs.chromium.org/p/chromium/issues/detail?id=781182
 function bugFix(state) {
-    var dx = state.dx
-    var dy = state.dy
-    var wval = document.body.clientWidth / 6
-    var hval = document.body.clientHeight / 6
-    var badx = (Math.abs(dx) > wval && (dx / lastx) < -1)
-    var bady = (Math.abs(dy) > hval && (dy / lasty) < -1)
+    const dx = state.dx
+    const dy = state.dy
+    const wval = document.body.clientWidth / 6
+    const hval = document.body.clientHeight / 6
+    const badx = (Math.abs(dx) > wval && (dx / lastx) < -1)
+    const bady = (Math.abs(dy) > hval && (dy / lasty) < -1)
     if (badx || bady) {
         state.dx = lastx
         state.dy = lasty

@@ -47,10 +47,10 @@ export default function (noa) {
 
 
         system: function movementProcessor(dt, states) {
-            var ents = noa.entities
+            const ents = noa.entities
 
             states.forEach(state => {
-                var body = ents.getPhysicsBody(state.__id)
+                const body = ents.getPhysicsBody(state.__id)
                 applyMovementPhysics(dt, state, body)
             })
 
@@ -61,9 +61,9 @@ export default function (noa) {
 }
 
 
-var tempvec = vec3.create()
-var tempvec2 = vec3.create()
-var zeroVec = vec3.create()
+const tempvec = vec3.create()
+const tempvec2 = vec3.create()
+const zeroVec = vec3.create()
 
 
 function applyMovementPhysics(dt, state, body) {
@@ -72,8 +72,8 @@ function applyMovementPhysics(dt, state, body) {
     //   for original code
 
     // jumping
-    var onGround = (body.atRestY() < 0)
-    var canjump = (onGround || state._jumpCount < state.airJumps)
+    const onGround = (body.atRestY() < 0)
+    const canjump = (onGround || state._jumpCount < state.airJumps)
     if (onGround) {
         state._isJumping = false
         state._jumpCount = 0
@@ -83,7 +83,7 @@ function applyMovementPhysics(dt, state, body) {
     if (state.jumping) {
         if (state._isJumping) { // continue previous jump
             if (state._currjumptime > 0) {
-                var jf = state.jumpForce
+                let jf = state.jumpForce
                 if (state._currjumptime < dt) jf *= state._currjumptime / dt
                 body.applyForce([0, jf, 0])
                 state._currjumptime -= dt
@@ -101,11 +101,11 @@ function applyMovementPhysics(dt, state, body) {
     }
 
     // apply movement forces if entity is moving, otherwise just friction
-    var m = tempvec
-    var push = tempvec2
+    const m = tempvec
+    const push = tempvec2
     if (state.running) {
 
-        var speed = state.maxSpeed
+        const speed = state.maxSpeed
         // todo: add crouch/sprint modifiers if needed
         // if (state.sprint) speed *= state.sprintMoveMult
         // if (state.crouch) speed *= state.crouchMoveMult
@@ -119,16 +119,16 @@ function applyMovementPhysics(dt, state, body) {
         // https://github.com/id-Software/Quake-III-Arena/blob/master/code/game/bg_pmove.c#L275
         vec3.subtract(push, m, body.velocity)
         push[1] = 0
-        var pushLen = vec3.length(push)
+        const pushLen = vec3.length(push)
         vec3.normalize(push, push)
 
         if (pushLen > 0) {
             // pushing force vector
-            var canPush = state.moveForce
+            let canPush = state.moveForce
             if (!onGround) canPush *= state.airMoveMult
 
             // apply final force
-            var pushAmt = state.responsiveness * pushLen
+            const pushAmt = state.responsiveness * pushLen
             if (canPush > pushAmt) canPush = pushAmt
 
             vec3.scale(push, push, canPush)

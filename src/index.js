@@ -24,14 +24,14 @@ import constants from './lib/constants'
 import util from './lib/util'
 
 // profiling flag
-var PROFILE = 0
-var PROFILE_RENDER = 0
-var DEBUG_QUEUES = 0
+const PROFILE = 0
+const PROFILE_RENDER = 0
+const DEBUG_QUEUES = 0
 
 
 
 
-var defaults = {
+const defaults = {
     debug: false,
     silent: false,
     playerHeight: 1.8,
@@ -88,7 +88,7 @@ export default class Engine extends EventEmitter {
         this.version = pkg.version
 
         if (!opts.silent) {
-            var debugstr = (opts.debug) ? ' (debug)' : ''
+            const debugstr = (opts.debug) ? ' (debug)' : ''
             console.log(`noa-engine v${this.version}${debugstr}`)
         }
 
@@ -96,7 +96,7 @@ export default class Engine extends EventEmitter {
         this._tickRate = opts.tickRate
         this._paused = false
         this._dragOutsideLock = opts.dragCameraOutsidePointerLock
-        var self = this
+        const self = this
 
         /**
          * container (html/div) manager
@@ -143,7 +143,7 @@ export default class Engine extends EventEmitter {
         this.cameraControls = new CameraController(this, opts)
 
 
-        var ents = this.ents
+        const ents = this.ents
 
         /** Entity id for the player entity */
         this.playerEntity = ents.add(
@@ -158,7 +158,7 @@ export default class Engine extends EventEmitter {
         ents.addComponent(this.playerEntity, ents.names.collideEntities)
 
         // adjust default physics parameters
-        var body = ents.getPhysicsBody(this.playerEntity)
+        const body = ents.getPhysicsBody(this.playerEntity)
         body.gravityMultiplier = 2 // less floaty
         body.autoStep = opts.playerAutoStep // auto step onto blocks
 
@@ -175,7 +175,7 @@ export default class Engine extends EventEmitter {
 
         // movement component - applies movement forces
         // todo: populate movement settings from options
-        var moveOpts = {
+        const moveOpts = {
             airJumps: 1
         }
         ents.addComponent(this.playerEntity, ents.names.movement, moveOpts)
@@ -221,7 +221,7 @@ export default class Engine extends EventEmitter {
             window.scene = this.rendering._scene
             window.ndarray = ndarray
             window.vec3 = vec3
-            var debug = false
+            let debug = false
             this.inputs.bind('debug', 'Z')
             this.inputs.down.on('debug', function onDebug() {
                 debug = !debug
@@ -249,7 +249,7 @@ export default class Engine extends EventEmitter {
     tick() {
         if (this._paused) return
         profile_hook('start')
-        var dt = this._tickRate // fixed timesteps!
+        const dt = this._tickRate // fixed timesteps!
         this.world.tick(dt) // chunk creation/removal
         profile_hook('world')
         if (!this.world.playerChunkLoaded) {
@@ -278,10 +278,10 @@ export default class Engine extends EventEmitter {
     render(framePart) {
         if (this._paused) return
         // update frame position property and calc dt
-        var framesAdvanced = framePart - this.positionInCurrentTick
+        let framesAdvanced = framePart - this.positionInCurrentTick
         if (framesAdvanced < 0) framesAdvanced += 1
         this.positionInCurrentTick = framePart
-        var dt = framesAdvanced * this._tickRate // ms since last tick
+        const dt = framesAdvanced * this._tickRate // ms since last tick
         // core render:
         profile_hook_render('start')
         // only move camera during pointerlock or mousedown, or if pointerlock is unsupported
@@ -366,13 +366,13 @@ export default class Engine extends EventEmitter {
     /** */
     setPlayerEyeOffset(y) {
         this.playerEyeOffset = y
-        var state = this.ents.getState(this.rendering.cameraTarget, this.ents.names.followsEntity)
+        const state = this.ents.getState(this.rendering.cameraTarget, this.ents.names.followsEntity)
         state.offset[1] = y
     }
 
     /** */
     getPlayerEyePosition() {
-        var pos = this.entities.getPosition(this.playerEntity)
+        const pos = this.entities.getPosition(this.playerEntity)
         vec3.copy(_eyeLoc, pos)
         _eyeLoc[1] += this.playerEyeOffset
         return _eyeLoc
@@ -381,7 +381,7 @@ export default class Engine extends EventEmitter {
     /** */
     getCameraVector() {
         // rendering works with babylon's xyz vectors
-        var v = this.rendering.getCameraVector()
+        const v = this.rendering.getCameraVector()
         vec3.set(_camVec, v.x, v.y, v.z)
         return _camVec
     }
@@ -395,34 +395,34 @@ export default class Engine extends EventEmitter {
     pick(pos, vec, dist, blockIdTestFunction) {
         if (dist === 0) return null
         // if no block ID function is specified default to solidity check
-        var testFn = blockIdTestFunction || this.registry.getBlockSolidity
-        var world = this.world
-        var testVoxel = (x, y, z) => {
-            var id = world.getBlockID(x, y, z)
+        const testFn = blockIdTestFunction || this.registry.getBlockSolidity
+        const world = this.world
+        const testVoxel = (x, y, z) => {
+            const id = world.getBlockID(x, y, z)
             return testFn(id)
         }
         pos = pos || this.getPlayerEyePosition()
         vec = vec || this.getCameraVector()
         dist = dist || this.blockTestDistance
-        var rpos = _hitResult.position
-        var rnorm = _hitResult.normal
-        var hit = raycast(testVoxel, pos, vec, dist, rpos, rnorm)
+        const rpos = _hitResult.position
+        const rnorm = _hitResult.normal
+        const hit = raycast(testVoxel, pos, vec, dist, rpos, rnorm)
         if (!hit) return null
         // position is right on a voxel border - adjust it so flooring will work as expected
-        for (var i = 0; i < 3; i++) rpos[i] -= 0.01 * rnorm[i]
+        for (let i = 0; i < 3; i++) rpos[i] -= 0.01 * rnorm[i]
         return _hitResult
     }
 }
 
 
-var __qwasDone = true
-var __qstart
+let __qwasDone = true
+let __qstart
 
 function debugQueues(self) {
-    var a = self.world._chunkIDsToAdd.length
-    var b = self.world._chunkIDsToCreate.length
-    var c = self.rendering._chunksToMesh.length
-    var d = self.rendering._numMeshedChunks
+    const a = self.world._chunkIDsToAdd.length
+    const b = self.world._chunkIDsToCreate.length
+    const c = self.rendering._chunksToMesh.length
+    const d = self.rendering._numMeshedChunks
     if (a + b + c > 0) console.log([
         'Chunks:', 'unmade', a,
         'pending creation', b,
@@ -464,15 +464,15 @@ var _hitResult = {
 // Each frame, by default pick along the player's view vector 
 // and tell rendering to highlight the struck block face
 function updateBlockTargets(noa) {
-    var newhash = ''
-    var blockIdFn = noa.blockTargetIdCheck || noa.registry.getBlockSolidity
-    var result = noa.pick(null, null, null, blockIdFn)
+    let newhash = ''
+    const blockIdFn = noa.blockTargetIdCheck || noa.registry.getBlockSolidity
+    const result = noa.pick(null, null, null, blockIdFn)
     if (result) {
-        var dat = _targetedBlockDat
-        for (var i = 0; i < 3; i++) {
+        const dat = _targetedBlockDat
+        for (let i = 0; i < 3; i++) {
             // position values are right on a border, so adjust them before flooring!
-            var n = result.normal[i] | 0
-            var p = Math.floor(result.position[i])
+            const n = result.normal[i] | 0
+            const p = Math.floor(result.position[i])
             dat.position[i] = p
             dat.normal[i] = n
             dat.adjacent[i] = p + n
@@ -510,7 +510,7 @@ var _prevTargetHash = ''
 var profile_hook = s => {}
 var profile_hook_render = s => {}
 if (PROFILE)(() => {
-    var timer = new(util.Timer)(200, 'tick   ')
+    const timer = new(util.Timer)(200, 'tick   ')
     profile_hook = state => {
         if (state === 'start') timer.start()
         else if (state === 'end') timer.report()
@@ -518,7 +518,7 @@ if (PROFILE)(() => {
     }
 })()
 if (PROFILE_RENDER)(() => {
-    var timer = new(util.Timer)(200, 'render ')
+    const timer = new(util.Timer)(200, 'render ')
     profile_hook_render = state => {
         if (state === 'start') timer.start()
         else if (state === 'end') timer.report()

@@ -40,23 +40,23 @@ export default function (noa) {
 
 
         system: function entityCollider(dt, states) {
-            var ents = noa.ents
+            const ents = noa.ents
 
             // data struct that boxIntersect looks for
             // - array of [lo, lo, lo, hi, hi, hi] extents
-            var intervals = []
-            for (var i = 0; i < states.length; i++) {
-                var id = states[i].__id
-                var dat = ents.getPositionData(id)
+            const intervals = []
+            for (let i = 0; i < states.length; i++) {
+                const id = states[i].__id
+                const dat = ents.getPositionData(id)
                 intervals[i] = dat._extents
             }
 
             // run the intersect library
             boxIntersect(intervals, (a, b) => {
-                var stateA = states[a]
-                var stateB = states[b]
-                var intervalA = intervals[a]
-                var intervalB = intervals[b]
+                const stateA = states[a]
+                const stateB = states[b]
+                const intervalA = intervals[a]
+                const intervalB = intervals[b]
                 if (cylindricalHitTest(stateA, stateB, intervalA, intervalB)) {
                     handleCollision(noa, stateA, stateB)
                 }
@@ -75,8 +75,8 @@ export default function (noa) {
 
 
     function handleCollision(noa, stateA, stateB) {
-        var idA = stateA.__id
-        var idB = stateB.__id
+        const idA = stateA.__id
+        const idB = stateB.__id
 
         // entities really do overlap, so check masks and call event handlers
         if (stateA.collideMask & stateB.collideBits) {
@@ -116,13 +116,13 @@ export default function (noa) {
 
     function cylinderCylinderTest(a, b) {
         // distance between cylinder centers
-        var rada = (a[3] - a[0]) / 2
-        var radb = (b[3] - b[0]) / 2
-        var dx = a[0] + rada - (b[0] + radb)
-        var dz = a[2] + rada - (b[2] + radb)
+        const rada = (a[3] - a[0]) / 2
+        const radb = (b[3] - b[0]) / 2
+        const dx = a[0] + rada - (b[0] + radb)
+        const dz = a[2] + rada - (b[2] + radb)
         // collide if dist <= sum of radii
-        var distsq = dx * dx + dz * dz
-        var radsum = rada + radb
+        const distsq = dx * dx + dz * dz
+        const radsum = rada + radb
         return (distsq <= radsum * radsum)
     }
 
@@ -134,16 +134,16 @@ export default function (noa) {
 
     function cylinderBoxTest(cyl, cube) {
         // X-z center of cylinder
-        var rad = (cyl[3] - cyl[0]) / 2
-        var cx = cyl[0] + rad
-        var cz = cyl[2] + rad
+        const rad = (cyl[3] - cyl[0]) / 2
+        const cx = cyl[0] + rad
+        const cz = cyl[2] + rad
         // point in X-Z square closest to cylinder
-        var px = clamp(cx, cube[0], cube[3])
-        var pz = clamp(cz, cube[2], cube[5])
+        const px = clamp(cx, cube[0], cube[3])
+        const pz = clamp(cz, cube[2], cube[5])
         // collision if distance from that point to circle <= cylinder radius
-        var dx = px - cx
-        var dz = pz - cz
-        var distsq = dx * dx + dz * dz
+        const dx = px - cx
+        const dz = pz - cz
+        const distsq = dx * dx + dz * dz
         return (distsq <= rad * rad)
     }
 

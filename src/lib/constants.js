@@ -13,17 +13,17 @@
  */
 
 
-var ID_BITS = 9
-var ID_MASK = (1 << ID_BITS) - 1
+const ID_BITS = 9
+const ID_MASK = (1 << ID_BITS) - 1
 
-var VAR_BITS = 4
-var VAR_OFFSET = ID_BITS
-var VAR_MASK = ((1 << VAR_BITS) - 1) << VAR_OFFSET
+const VAR_BITS = 4
+const VAR_OFFSET = ID_BITS
+const VAR_MASK = ((1 << VAR_BITS) - 1) << VAR_OFFSET
 
-var n = ID_BITS + VAR_BITS
-var SOLID_BIT = 1 << n++
-var OPAQUE_BIT = 1 << n++
-var OBJECT_BIT = 1 << n++
+let n = ID_BITS + VAR_BITS
+const SOLID_BIT = 1 << n++
+const OPAQUE_BIT = 1 << n++
+const OBJECT_BIT = 1 << n++
 
 // exports
 

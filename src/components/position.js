@@ -10,7 +10,7 @@ import vec3 from 'gl-vec3'
 
 export default function (noa) {
 
-    var hasWarned = false
+    let hasWarned = false
 
     return {
 
@@ -60,7 +60,7 @@ export default function (noa) {
 
 
 function updateExtents(ext, pos, height, width) {
-    var hw = width / 2
+    const hw = width / 2
     ext[0] = pos[0] - hw
     ext[1] = pos[1]
     ext[2] = pos[2] - hw

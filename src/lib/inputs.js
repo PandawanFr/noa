@@ -8,7 +8,7 @@ import createInputs from 'game-inputs'
  */
 
 
-var defaultBindings = {
+const defaultBindings = {
     bindings: {
         "forward": ["W", "<up>"],
         "left": ["A", "<left>"],
@@ -26,10 +26,10 @@ var defaultBindings = {
 
 export default function makeInputs(noa, opts, element) {
     opts = Object.assign({}, defaultBindings, opts)
-    var inputs = createInputs(element, opts)
-    var b = opts.bindings
-    for (var name in b) {
-        var arr = (Array.isArray(b[name])) ? b[name] : [b[name]]
+    const inputs = createInputs(element, opts)
+    const b = opts.bindings
+    for (const name in b) {
+        const arr = (Array.isArray(b[name])) ? b[name] : [b[name]]
         arr.unshift(name)
         inputs.bind(...arr)
     }

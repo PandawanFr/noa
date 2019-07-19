@@ -7,7 +7,7 @@ export default new TerrainMesher()
 
 
 // enable for profiling..
-var PROFILE = 0
+const PROFILE = 0
 
 
 
@@ -21,8 +21,8 @@ var PROFILE = 0
 
 function TerrainMesher() {
 
-    var greedyMesher = new GreedyMesher()
-    var meshBuilder = new MeshBuilder()
+    const greedyMesher = new GreedyMesher()
+    const meshBuilder = new MeshBuilder()
 
 
     /*
@@ -33,21 +33,21 @@ function TerrainMesher() {
 
     this.meshChunk = (chunk, matGetter, colGetter, ignoreMaterials, useAO, aoVals, revAoVal) => {
         profile_hook('start')
-        var noa = chunk.noa
+        const noa = chunk.noa
 
         // args
-        var array = chunk.array
-        var mats = matGetter || noa.registry.getBlockFaceMaterial
-        var cols = colGetter || noa.registry._getMaterialVertexColor
-        var ao = (useAO === undefined) ? noa.rendering.useAO : useAO
-        var vals = aoVals || noa.rendering.aoVals
-        var rev = isNaN(revAoVal) ? noa.rendering.revAoVal : revAoVal
+        const array = chunk.array
+        const mats = matGetter || noa.registry.getBlockFaceMaterial
+        const cols = colGetter || noa.registry._getMaterialVertexColor
+        const ao = (useAO === undefined) ? noa.rendering.useAO : useAO
+        const vals = aoVals || noa.rendering.aoVals
+        const rev = isNaN(revAoVal) ? noa.rendering.revAoVal : revAoVal
 
         // greedy mesher creates an array of Submesh structs
-        var subMeshes = greedyMesher.mesh(array, mats, cols, ao, vals, rev)
+        const subMeshes = greedyMesher.mesh(array, mats, cols, ao, vals, rev)
 
         // builds the babylon mesh that will be added to the scene
-        var mesh
+        let mesh
         if (Object.keys(subMeshes).length) {
             mesh = meshBuilder.build(chunk, subMeshes, ignoreMaterials)
             profile_hook('built terrain')
@@ -105,7 +105,7 @@ class Submesh {
 
 function MeshBuilder() {
 
-    var noa
+    let noa
 
 
     // core
@@ -113,28 +113,28 @@ function MeshBuilder() {
         noa = chunk.noa
 
         // preprocess meshdata entries to merge those that will use default terrain material
-        var mergeCriteria = mdat => {
+        const mergeCriteria = mdat => {
             if (ignoreMaterials) return true
             if (mdat.renderMat) return false
-            var url = noa.registry.getMaterialTexture(mdat.id)
-            var alpha = noa.registry.getMaterialData(mdat.id).alpha
+            const url = noa.registry.getMaterialTexture(mdat.id)
+            const alpha = noa.registry.getMaterialData(mdat.id).alpha
             if (url || alpha < 1) return false
         }
         mergeSubmeshes(meshdata, mergeCriteria)
 
         // now merge everything, keeping track of vertices/indices/materials
-        var results = mergeSubmeshes(meshdata, () => true)
+        const results = mergeSubmeshes(meshdata, () => true)
 
         // merge sole remaining submesh instance into a babylon mesh
-        var mdat = meshdata[results.mergedID]
-        var name = `chunk_${chunk.id}`
-        var mats = results.matIDs.map(id => getTerrainMaterial(id, ignoreMaterials))
-        var mesh = buildMeshFromSubmesh(mdat, name, mats, results.vertices, results.indices)
+        const mdat = meshdata[results.mergedID]
+        const name = `chunk_${chunk.id}`
+        const mats = results.matIDs.map(id => getTerrainMaterial(id, ignoreMaterials))
+        const mesh = buildMeshFromSubmesh(mdat, name, mats, results.vertices, results.indices)
 
         // position, freeze and exit
-        var x = chunk.i * chunk.size
-        var y = chunk.j * chunk.size
-        var z = chunk.k * chunk.size
+        const x = chunk.i * chunk.size
+        const y = chunk.j * chunk.size
+        const z = chunk.k * chunk.size
         mesh.position.x = x
         mesh.position.y = y
         mesh.position.z = z
@@ -153,32 +153,32 @@ function MeshBuilder() {
         noa = chunk.noa
 
         // preprocess meshdata entries to merge those that use default terrain material
-        var mergeCriteria = mdat => {
+        const mergeCriteria = mdat => {
             if (ignoreMaterials) return true
             if (mdat.renderMat) return false
-            var url = noa.registry.getMaterialTexture(mdat.id)
-            var alpha = noa.registry.getMaterialData(mdat.id).alpha
+            const url = noa.registry.getMaterialTexture(mdat.id)
+            const alpha = noa.registry.getMaterialData(mdat.id).alpha
             if (url || alpha < 1) return false
         }
         mergeSubmeshes(meshdata, mergeCriteria)
 
         // go through (remaining) meshdata entries and create a mesh for each
         // call the first one the parent, and attach others to it
-        var parent = null
-        var keylist = Object.keys(meshdata)
-        for (var i = 0; i < keylist.length; ++i) {
-            var mdat = meshdata[keylist[i]]
-            var matID = mdat.id
-            var mat = getTerrainMaterial(matID, ignoreMaterials)
-            var name = `chunk_inner_${chunk.id} ${matID}`
-            var mesh = buildMeshFromSubmesh(mdat, name, [mat])
+        let parent = null
+        const keylist = Object.keys(meshdata)
+        for (let i = 0; i < keylist.length; ++i) {
+            const mdat = meshdata[keylist[i]]
+            const matID = mdat.id
+            const mat = getTerrainMaterial(matID, ignoreMaterials)
+            const name = `chunk_inner_${chunk.id} ${matID}`
+            const mesh = buildMeshFromSubmesh(mdat, name, [mat])
 
             if (!parent) {
                 parent = mesh
                 // position the parent globally
-                var x = chunk.i * chunk.size
-                var y = chunk.j * chunk.size
-                var z = chunk.k * chunk.size
+                const x = chunk.i * chunk.size
+                const y = chunk.j * chunk.size
+                const z = chunk.k * chunk.size
                 parent.position.x = x
                 parent.position.y = y
                 parent.position.z = z
@@ -199,15 +199,15 @@ function MeshBuilder() {
     // meet some criteria into the first such submesh
     //      modifies meshDataList in place!
     function mergeSubmeshes(meshDataList, criteria) {
-        var vertices = []
-        var indices = []
-        var matIDs = []
+        const vertices = []
+        const indices = []
+        const matIDs = []
 
-        var keylist = Object.keys(meshDataList)
-        var target = null
-        var targetID
-        for (var i = 0; i < keylist.length; ++i) {
-            var mdat = meshDataList[keylist[i]]
+        const keylist = Object.keys(meshDataList)
+        let target = null
+        let targetID
+        for (let i = 0; i < keylist.length; ++i) {
+            const mdat = meshDataList[keylist[i]]
             if (!criteria(mdat)) continue
 
             vertices.push(mdat.positions.length)
@@ -219,14 +219,14 @@ function MeshBuilder() {
                 targetID = keylist[i]
 
             } else {
-                var indexOffset = target.positions.length / 3
+                const indexOffset = target.positions.length / 3
                 // merge data in "mdat" onto "target"
                 target.positions = target.positions.concat(mdat.positions)
                 target.normals = target.normals.concat(mdat.normals)
                 target.colors = target.colors.concat(mdat.colors)
                 target.uvs = target.uvs.concat(mdat.uvs)
                 // indices must be offset relative to data being merged onto
-                for (var j = 0, len = mdat.indices.length; j < len; ++j) {
+                for (let j = 0, len = mdat.indices.length; j < len; ++j) {
                     target.indices.push(mdat.indices[j] + indexOffset)
                 }
                 // get rid of entry that's been merged
@@ -248,9 +248,9 @@ function MeshBuilder() {
     function buildMeshFromSubmesh(submesh, name, mats, verts, inds) {
 
         // base mesh and vertexData object
-        var scene = noa.rendering.getScene()
-        var mesh = new BABYLON.Mesh(name, scene)
-        var vdat = new BABYLON.VertexData()
+        const scene = noa.rendering.getScene()
+        const mesh = new BABYLON.Mesh(name, scene)
+        const vdat = new BABYLON.VertexData()
         vdat.positions = submesh.positions
         vdat.indices = submesh.indices
         vdat.normals = submesh.normals
@@ -265,15 +265,15 @@ function MeshBuilder() {
 
         } else {
             // else we need to make a multimaterial and define (babylon) submeshes
-            var multiMat = new BABYLON.MultiMaterial(`multimat ${name}`, scene)
+            const multiMat = new BABYLON.MultiMaterial(`multimat ${name}`, scene)
             mesh.subMeshes = []
             // var totalVerts = vdat.positions.length
             // var totalInds = vdat.indices.length
-            var vertStart = 0
-            var indStart = 0
-            for (var i = 0; i < mats.length; i++) {
+            let vertStart = 0
+            let indStart = 0
+            for (let i = 0; i < mats.length; i++) {
                 multiMat.subMaterials[i] = mats[i]
-                var sub = new BABYLON.SubMesh(i, vertStart, verts[i], indStart, inds[i], mesh)
+                const sub = new BABYLON.SubMesh(i, vertStart, verts[i], indStart, inds[i], mesh)
                 mesh.subMeshes[i] = sub
                 vertStart += verts[i]
                 indStart += inds[i]
@@ -290,12 +290,12 @@ function MeshBuilder() {
     //                         Material wrangling
 
 
-    var materialCache = {}
+    const materialCache = {}
 
     // manage materials/textures to avoid duplicating them
     function getTerrainMaterial(matID, ignore) {
         if (ignore) return noa.rendering.flatMaterial
-        var name = `terrain mat ${matID}`
+        const name = `terrain mat ${matID}`
         if (!materialCache[name]) materialCache[name] = makeTerrainMaterial(matID)
         return materialCache[name]
     }
@@ -304,19 +304,19 @@ function MeshBuilder() {
     // canonical function to make a terrain material
     function makeTerrainMaterial(id) {
         // if user-specified render material is defined, use it
-        var matData = noa.registry.getMaterialData(id)
+        const matData = noa.registry.getMaterialData(id)
         if (matData.renderMat) return matData.renderMat
         // otherwise determine which built-in material to use
-        var url = noa.registry.getMaterialTexture(id)
-        var alpha = matData.alpha
+        const url = noa.registry.getMaterialTexture(id)
+        const alpha = matData.alpha
         if (!url && alpha == 1) {
             // base material is fine for non-textured case, if no alpha
             return noa.rendering.flatMaterial
         }
-        var mat = noa.rendering.flatMaterial.clone(`terrain${id}`)
+        const mat = noa.rendering.flatMaterial.clone(`terrain${id}`)
         if (url) {
-            var scene = noa.rendering.getScene()
-            var tex = new BABYLON.Texture(url, scene, true, false, BABYLON.Texture.NEAREST_SAMPLINGMODE)
+            const scene = noa.rendering.getScene()
+            const tex = new BABYLON.Texture(url, scene, true, false, BABYLON.Texture.NEAREST_SAMPLINGMODE)
             if (matData.textureAlpha) tex.hasAlpha = true
             mat.diffuseTexture = tex
         }
@@ -368,17 +368,17 @@ function MeshBuilder() {
 function GreedyMesher() {
 
     // data representation constants
-    var constants = Constants
+    const constants = Constants
 
-    var ID_MASK = constants.ID_MASK
+    const ID_MASK = constants.ID_MASK
     // var VAR_MASK = constants.VAR_MASK // NYI
-    var SOLID_BIT = constants.SOLID_BIT
-    var OPAQUE_BIT = constants.OPAQUE_BIT
-    var OBJECT_BIT = constants.OBJECT_BIT
+    const SOLID_BIT = constants.SOLID_BIT
+    const OPAQUE_BIT = constants.OPAQUE_BIT
+    const OBJECT_BIT = constants.OBJECT_BIT
 
 
-    var maskCache = new Int16Array(16)
-    var aomaskCache = new Uint16Array(16)
+    let maskCache = new Int16Array(16)
+    let aomaskCache = new Uint16Array(16)
 
 
 
@@ -386,26 +386,26 @@ function GreedyMesher() {
     this.mesh = (arr, getMaterial, getColor, doAO, aoValues, revAoVal) => {
 
         // return object, holder for Submeshes
-        var subMeshes = {}
+        const subMeshes = {}
 
         // precalc how to apply AO packing in first masking function
-        var skipReverseAO = (doAO && (revAoVal === aoValues[0]))
-        var aoPackFcn
+        const skipReverseAO = (doAO && (revAoVal === aoValues[0]))
+        let aoPackFcn
         if (doAO) aoPackFcn = (skipReverseAO) ? packAOMaskNoReverse : packAOMask
 
 
         //Sweep over each axis, mapping axes to [d,u,v]
-        for (var d = 0; d < 3; ++d) {
-            var u = (d + 1) % 3
-            var v = (d + 2) % 3
+        for (let d = 0; d < 3; ++d) {
+            const u = (d + 1) % 3
+            const v = (d + 2) % 3
 
             // make transposed ndarray so index i is the axis we're sweeping
-            var arrT = arr.transpose(d, u, v).lo(1, 1, 1).hi(arr.shape[d] - 2, arr.shape[u] - 2, arr.shape[v] - 2)
+            const arrT = arr.transpose(d, u, v).lo(1, 1, 1).hi(arr.shape[d] - 2, arr.shape[u] - 2, arr.shape[v] - 2)
 
             // shorten len0 by 1 so faces at edges don't get drawn in both chunks
-            var len0 = arrT.shape[0] - 1
-            var len1 = arrT.shape[1]
-            var len2 = arrT.shape[2]
+            const len0 = arrT.shape[0] - 1
+            const len1 = arrT.shape[1]
+            const len2 = arrT.shape[2]
 
             // create bigger mask arrays as needed
             if (maskCache.length < len1 * len2) {
@@ -414,7 +414,7 @@ function GreedyMesher() {
             }
 
             // iterate along current major axis..
-            for (var i = 0; i <= len0; ++i) {
+            for (let i = 0; i <= len0; ++i) {
 
                 // fills mask and aomask arrays with values
                 constructMeshMasks(i, d, arrT, getMaterial, aoPackFcn)
@@ -443,30 +443,30 @@ function GreedyMesher() {
     // iterating across ith 2d plane, with n being index into masks
 
     function constructMeshMasks(i, d, arrT, getMaterial, aoPackFcn) {
-        var len = arrT.shape[1]
-        var mask = maskCache
-        var aomask = aomaskCache
+        const len = arrT.shape[1]
+        const mask = maskCache
+        const aomask = aomaskCache
         // set up for quick array traversals
-        var n = 0
-        var data = arrT.data
-        var dbase = arrT.index(i - 1, 0, 0)
-        var istride = arrT.stride[0]
-        var jstride = arrT.stride[1]
-        var kstride = arrT.stride[2]
+        let n = 0
+        const data = arrT.data
+        let dbase = arrT.index(i - 1, 0, 0)
+        const istride = arrT.stride[0]
+        const jstride = arrT.stride[1]
+        const kstride = arrT.stride[2]
 
-        for (var k = 0; k < len; ++k) {
-            var d0 = dbase
+        for (let k = 0; k < len; ++k) {
+            let d0 = dbase
             dbase += kstride
-            for (var j = 0; j < len; j++, n++, d0 += jstride) {
+            for (let j = 0; j < len; j++, n++, d0 += jstride) {
 
                 // mask[n] will represent the face needed between i-1,j,k and i,j,k
                 // for now, assume we never have two faces in both directions
 
                 // IDs at i-1,j,k  and  i,j,k
-                var id0 = data[d0]
-                var id1 = data[d0 + istride]
+                const id0 = data[d0]
+                const id1 = data[d0 + istride]
 
-                var faceDir = getFaceDir(id0, id1)
+                const faceDir = getFaceDir(id0, id1)
                 if (faceDir) {
                     // set regular mask value to material ID, sign indicating direction
                     mask[n] = (faceDir > 0) ?
@@ -476,8 +476,8 @@ function GreedyMesher() {
                     // if doing AO, precalculate AO level for each face into second mask
                     if (aoPackFcn) {
                         // i values in direction face is/isn't pointing
-                        var ipos = (faceDir > 0) ? i : i - 1
-                        var ineg = (faceDir > 0) ? i - 1 : i
+                        const ipos = (faceDir > 0) ? i : i - 1
+                        const ineg = (faceDir > 0) ? i - 1 : i
 
                         // this got so big I rolled it into a function
                         aomask[n] = aoPackFcn(arrT, ipos, ineg, j, k)
@@ -496,8 +496,8 @@ function GreedyMesher() {
     function getFaceDir(id0, id1) {
         // no face if both blocks are opaque, or if ids match
         if (id0 === id1) return 0
-        var op0 = id0 & OPAQUE_BIT
-        var op1 = id1 & OPAQUE_BIT
+        const op0 = id0 & OPAQUE_BIT
+        const op1 = id1 & OPAQUE_BIT
         if (op0 && op1) return 0
         // if either block is opaque draw a face for it
         if (op0) return 1
@@ -522,26 +522,26 @@ function GreedyMesher() {
 
     function constructMeshDataFromMasks(i, d, u, v, len1, len2,
         doAO, submeshes, getColor, aoValues, revAoVal) {
-        var n = 0
-        var mask = maskCache
-        var aomask = aomaskCache
+        let n = 0
+        const mask = maskCache
+        const aomask = aomaskCache
 
         // some logic is broken into helper functions for AO and non-AO
         // this fixes deopts in Chrome (for reasons unknown)
-        var maskCompareFcn = (doAO) ? maskCompare : maskCompare_noAO
-        var meshColorFcn = (doAO) ? pushMeshColors : pushMeshColors_noAO
+        const maskCompareFcn = (doAO) ? maskCompare : maskCompare_noAO
+        const meshColorFcn = (doAO) ? pushMeshColors : pushMeshColors_noAO
 
-        for (var k = 0; k < len2; ++k) {
-            var w = 1
-            var h = 1
-            for (var j = 0; j < len1; j += w, n += w) {
+        for (let k = 0; k < len2; ++k) {
+            let w = 1
+            let h = 1
+            for (let j = 0; j < len1; j += w, n += w) {
 
-                var maskVal = mask[n] | 0
+                const maskVal = mask[n] | 0
                 if (!maskVal) {
                     w = 1
                     continue
                 }
-                var ao = aomask[n] | 0
+                const ao = aomask[n] | 0
 
                 // Compute width and height of area with same mask/aomask values
                 for (w = 1; w < len1 - j; ++w) {
@@ -550,8 +550,8 @@ function GreedyMesher() {
 
                 OUTER:
                     for (h = 1; h < len2 - k; ++h) {
-                        for (var m = 0; m < w; ++m) {
-                            var ix = n + m + h * len1
+                        for (let m = 0; m < w; ++m) {
+                            const ix = n + m + h * len1
                             if (!maskCompareFcn(ix, mask, maskVal, aomask, ao)) break OUTER
                         }
                     }
@@ -560,29 +560,29 @@ function GreedyMesher() {
                 //w=h=1
 
                 // material and mesh for this face
-                var matID = Math.abs(maskVal)
+                const matID = Math.abs(maskVal)
                 if (!submeshes[matID]) submeshes[matID] = new Submesh(matID)
-                var mesh = submeshes[matID]
-                var colors = mesh.colors
-                var c = getColor(matID)
+                const mesh = submeshes[matID]
+                const colors = mesh.colors
+                const c = getColor(matID)
 
                 // colors are pushed in helper function - avoids deopts
                 // tridir is boolean for which way to split the quad into triangles
 
-                var triDir = meshColorFcn(colors, c, ao, aoValues, revAoVal)
+                const triDir = meshColorFcn(colors, c, ao, aoValues, revAoVal)
 
 
                 //Add quad, vertices = x -> x+du -> x+du+dv -> x+dv
-                var x = [0, 0, 0]
+                const x = [0, 0, 0]
                 x[d] = i
                 x[u] = j
                 x[v] = k
-                var du = [0, 0, 0]
-                var dv = [0, 0, 0]
+                const du = [0, 0, 0]
+                const dv = [0, 0, 0]
                 du[u] = w
                 dv[v] = h
 
-                var pos = mesh.positions
+                const pos = mesh.positions
                 pos.push(
                     x[0], x[1], x[2],
                     x[0] + du[0], x[1] + du[1], x[2] + du[2],
@@ -592,7 +592,7 @@ function GreedyMesher() {
 
                 // add uv values, with the order and sign depending on 
                 // axis and direction so as to avoid mirror-image textures
-                var dir = (maskVal > 0) ? 1 : -1
+                const dir = (maskVal > 0) ? 1 : -1
 
                 if (d === 2) {
                     mesh.uvs.push(
@@ -611,7 +611,7 @@ function GreedyMesher() {
 
                 // Add indexes, ordered clockwise for the facing direction;
 
-                var vs = pos.length / 3 - 4
+                const vs = pos.length / 3 - 4
 
                 if (maskVal < 0) {
                     if (triDir) {
@@ -629,9 +629,9 @@ function GreedyMesher() {
 
 
                 // norms depend on which direction the mask was solid in..
-                var norm0 = d === 0 ? dir : 0
-                var norm1 = d === 1 ? dir : 0
-                var norm2 = d === 2 ? dir : 0
+                const norm0 = d === 0 ? dir : 0
+                const norm1 = d === 1 ? dir : 0
+                const norm2 = d === 2 ? dir : 0
 
                 // same norm for all vertices
                 mesh.normals.push(
@@ -642,8 +642,8 @@ function GreedyMesher() {
 
 
                 //Zero-out mask
-                for (var hx = 0; hx < h; ++hx) {
-                    for (var wx = 0; wx < w; ++wx) {
+                for (let hx = 0; hx < h; ++hx) {
+                    for (let wx = 0; wx < w; ++wx) {
                         mask[n + wx + hx * len1] = 0
                     }
                 }
@@ -676,17 +676,17 @@ function GreedyMesher() {
     }
 
     function pushMeshColors(colors, c, ao, aoValues, revAoVal) {
-        var ao00 = unpackAOMask(ao, 0, 0)
-        var ao10 = unpackAOMask(ao, 1, 0)
-        var ao11 = unpackAOMask(ao, 1, 1)
-        var ao01 = unpackAOMask(ao, 0, 1)
+        const ao00 = unpackAOMask(ao, 0, 0)
+        const ao10 = unpackAOMask(ao, 1, 0)
+        const ao11 = unpackAOMask(ao, 1, 1)
+        const ao01 = unpackAOMask(ao, 0, 1)
         pushAOColor(colors, c, ao00, aoValues, revAoVal)
         pushAOColor(colors, c, ao10, aoValues, revAoVal)
         pushAOColor(colors, c, ao11, aoValues, revAoVal)
         pushAOColor(colors, c, ao01, aoValues, revAoVal)
 
         // this bit is pretty magical..
-        var triDir = true
+        let triDir = true
         if (ao00 === ao11) {
             triDir = (ao01 === ao10) ? (ao01 == 2) : true
         } else {
@@ -717,14 +717,14 @@ function GreedyMesher() {
     // when skipping reverse AO, uses this simpler version of the function:
 
     function packAOMaskNoReverse(data, ipos, ineg, j, k) {
-        var a00 = 1
-        var a01 = 1
-        var a10 = 1
-        var a11 = 1
-        var solidBit = SOLID_BIT
+        let a00 = 1
+        let a01 = 1
+        let a10 = 1
+        let a11 = 1
+        const solidBit = SOLID_BIT
 
         // facing into a solid (non-opaque) block?
-        var facingSolid = (solidBit & data.get(ipos, j, k))
+        const facingSolid = (solidBit & data.get(ipos, j, k))
 
         // inc occlusion of vertex next to obstructed side
         if (data.get(ipos, j + 1, k) & solidBit) {++a10;++a11 }
@@ -753,14 +753,14 @@ function GreedyMesher() {
     // more complicated AO packing when doing reverse AO on corners
 
     function packAOMask(data, ipos, ineg, j, k) {
-        var a00 = 1
-        var a01 = 1
-        var a10 = 1
-        var a11 = 1
-        var solidBit = SOLID_BIT
+        let a00 = 1
+        let a01 = 1
+        let a10 = 1
+        let a11 = 1
+        const solidBit = SOLID_BIT
 
         // facing into a solid (non-opaque) block?
-        var facingSolid = (solidBit & data.get(ipos, j, k))
+        const facingSolid = (solidBit & data.get(ipos, j, k))
 
         // inc occlusion of vertex next to obstructed side
         if (data.get(ipos, j + 1, k) & solidBit) {++a10;++a11 }
@@ -826,7 +826,7 @@ function GreedyMesher() {
     // unpack (2 bit) ao value from ao mask
     // see above for details
     function unpackAOMask(aomask, jpos, kpos) {
-        var offset = jpos ? (kpos ? 6 : 4) : (kpos ? 2 : 0)
+        const offset = jpos ? (kpos ? 6 : 4) : (kpos ? 2 : 0)
         return aomask >> offset & 3
     }
 
@@ -834,7 +834,7 @@ function GreedyMesher() {
     // premultiply vertex colors by value depending on AO level
     // then push them into color array
     function pushAOColor(colors, baseCol, ao, aoVals, revAoVal) {
-        var mult = (ao === 0) ? revAoVal : aoVals[ao - 1]
+        const mult = (ao === 0) ? revAoVal : aoVals[ao - 1]
         colors.push(baseCol[0] * mult, baseCol[1] * mult, baseCol[2] * mult, 1)
     }
 
@@ -850,8 +850,8 @@ function GreedyMesher() {
 
 var profile_hook = (() => {
     if (!PROFILE) return () => {}
-    var every = 50
-    var timer = new(Timer)(every, 'Terrain meshing')
+    const every = 50
+    const timer = new(Timer)(every, 'Terrain meshing')
     return state => {
         if (state === 'start') timer.start()
         else if (state === 'end') timer.report()

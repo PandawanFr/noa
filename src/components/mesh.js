@@ -24,8 +24,8 @@ export default function (noa) {
             }
 
             // initialize mesh to correct position
-            var pos = noa.ents.getPosition(eid)
-            var mpos = state.mesh.position
+            const pos = noa.ents.getPosition(eid)
+            const mpos = state.mesh.position
             mpos.x = pos[0] + state.offset[0]
             mpos.y = pos[1] + state.offset[1]
             mpos.z = pos[2] + state.offset[2]
@@ -43,12 +43,12 @@ export default function (noa) {
             // set by the physics engine or driving logic
 
             states.forEach(state => {
-                var id = state.__id
+                const id = state.__id
 
-                var rpos = noa.ents.getPositionData(id).renderPosition
-                var x = rpos[0] + state.offset[0]
-                var y = rpos[1] + state.offset[1]
-                var z = rpos[2] + state.offset[2]
+                const rpos = noa.ents.getPositionData(id).renderPosition
+                const x = rpos[0] + state.offset[0]
+                const y = rpos[1] + state.offset[1]
+                const z = rpos[2] + state.offset[2]
 
                 state.mesh.position.copyFromFloats(x, y, z)
             })

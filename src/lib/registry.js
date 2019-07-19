@@ -12,18 +12,18 @@
  *      matData            matID -> { color, alpha, texture, textureAlpha }
  */
 
-var defaults = {
+const defaults = {
     texturePath: ''
 }
 
-var blockDefaults = {
+const blockDefaults = {
     solid: true,
     opaque: true,
     fluidDensity: 1.0,
     viscosity: 0.5,
 }
 
-var MAX_BLOCK_IDS = 255 // currently stored in chunks as int8
+const MAX_BLOCK_IDS = 255 // currently stored in chunks as int8
 
 
 
@@ -132,7 +132,7 @@ export default class Registry {
          */
         this.getMaterialId = (matIDs, name, lazyInit) => {
             if (!name) return 0
-            var id = matIDs[name]
+            let id = matIDs[name]
             if (id === undefined && lazyInit) id = this.registerMaterial(name)
             return id
         }
@@ -192,7 +192,7 @@ export default class Registry {
     registerBlock(id, _options = {}) {
         blockDefaults.solid = !_options.fluid
         blockDefaults.opaque = !_options.fluid
-        var opts = Object.assign({}, blockDefaults, _options)
+        const opts = Object.assign({}, blockDefaults, _options)
 
         // console.log('register block: ', id, opts)
         if (id < 1 || id > MAX_BLOCK_IDS) throw `Block id exceeds max: ${id}`
@@ -214,8 +214,8 @@ export default class Registry {
 
         // parse out material parameter
         // always store 6 material IDs per blockID, so material lookup is monomorphic
-        var mat = opts.material || null
-        var mats
+        const mat = opts.material || null
+        let mats
         if (!mat) {
             mats = [null, null, null, null, null, null]
         } else if (typeof mat == 'string') {
@@ -232,7 +232,7 @@ export default class Registry {
         } else throw `Invalid material parameter: ${mat}`
 
         // argument is material name, but store as material id, allocating one if needed
-        for (var i = 0; i < 6; ++i) {
+        for (let i = 0; i < 6; ++i) {
             this._blockMats[id * 6 + i] = this.getMaterialId(this._matIDs, mats[i], true)
         }
 
@@ -246,7 +246,7 @@ export default class Registry {
         }
 
         // event callbacks
-        var hasHandler = opts.onLoad || opts.onUnload || opts.onSet || opts.onUnset || opts.onCustomMeshCreate
+        const hasHandler = opts.onLoad || opts.onUnload || opts.onSet || opts.onUnset || opts.onCustomMeshCreate
         this._blockHandlers[id] = (hasHandler) ? new BlockCallbackHolder(opts) : null
 
         return id
@@ -267,9 +267,9 @@ export default class Registry {
 
     registerMaterial(name, color, textureURL, texHasAlpha, renderMaterial) {
         // console.log('register mat: ', name, color, textureURL)
-        var id = this._matIDs[name] || this._matData.length
+        const id = this._matIDs[name] || this._matData.length
         this._matIDs[name] = id
-        var alpha = 1
+        let alpha = 1
         if (color && color.length == 4) {
             alpha = color.pop()
         }

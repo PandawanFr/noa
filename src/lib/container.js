@@ -26,8 +26,8 @@ export default class Container extends EventEmitter {
         this.isFocused = document.hasFocus()
 
         // basic listeners
-        var self = this
-        var lockChange = ev => { onLockChange(self, ev) }
+        const self = this
+        const lockChange = ev => { onLockChange(self, ev) }
         document.addEventListener("pointerlockchange", lockChange, false)
         document.addEventListener("mozpointerlockchange", lockChange, false)
         document.addEventListener("webkitpointerlockchange", lockChange, false)
@@ -65,8 +65,8 @@ export default class Container extends EventEmitter {
 
 function onShellInit(self) {
     // create shell listeners that drive engine functions
-    var noa = self._noa
-    var shell = self._shell
+    const noa = self._noa
+    const shell = self._shell
     shell.on('tick', function onTick(n) { noa.tick(n) })
     shell.on('render', function onRender(n) { noa.render(n) })
     shell.on('resize', noa.rendering.resize.bind(noa.rendering))
@@ -87,7 +87,7 @@ function onShellInit(self) {
 
 function createContainerDiv() {
     // based on github.com/mikolalysenko/game-shell - makeDefaultContainer()
-    var container = document.createElement("div")
+    const container = document.createElement("div")
     container.tabindex = 1
     container.style.position = "absolute"
     container.style.left = "0px"
@@ -105,20 +105,20 @@ function createContainerDiv() {
 
 
 function createShell(canvas, opts) {
-    var shellDefaults = {
+    const shellDefaults = {
         pointerLock: true,
         preventDefaults: false
     }
     opts = Object.assign(shellDefaults, opts)
     opts.element = canvas
-    var shell = createGameShell(opts)
+    const shell = createGameShell(opts)
     shell.preventDefaults = opts.preventDefaults
     return shell
 }
 
 function getOrCreateCanvas(el) {
     // based on github.com/stackgl/gl-now - default canvas
-    var canvas = el.querySelector('canvas')
+    let canvas = el.querySelector('canvas')
     if (!canvas) {
         canvas = document.createElement('canvas')
         canvas.style.position = "absolute"
@@ -135,7 +135,7 @@ function getOrCreateCanvas(el) {
 
 // track changes in Pointer Lock state
 function onLockChange(self, ev) {
-    var el = document.pointerLockElement ||
+    const el = document.pointerLockElement ||
         document.mozPointerLockElement ||
         document.webkitPointerLockElement
     if (el) {
@@ -159,13 +159,13 @@ function onLockChange(self, ev) {
 // For now, just feature detect, but assume no support if a touch event occurs
 // TODO: see if this makes sense on hybrid touch/mouse devices
 function detectPointerLock(self) {
-    var lockElementExists =
+    const lockElementExists =
         ('pointerLockElement' in document) ||
         ('mozPointerLockElement' in document) ||
         ('webkitPointerLockElement' in document)
     if (lockElementExists) {
         self.supportsPointerLock = true
-        var listener = e => {
+        const listener = e => {
             self.supportsPointerLock = false
             document.removeEventListener(e.type, listener)
         }

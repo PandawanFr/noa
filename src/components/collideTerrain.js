@@ -9,18 +9,18 @@ export default function (noa) {
 
         onAdd: function (eid, state) {
             // add collide handler for physics engine to call
-            var ents = noa.entities
+            const ents = noa.entities
             if (ents.hasPhysics(eid)) {
-                var body = ents.getPhysicsBody(eid)
+                const body = ents.getPhysicsBody(eid)
                 body.onCollide = function bodyOnCollide(impulse) {
-                    var cb = noa.ents.getCollideTerrain(eid).callback
+                    const cb = noa.ents.getCollideTerrain(eid).callback
                     if (cb) cb(impulse, eid)
                 }
             }
         },
 
         onRemove: function (eid, state) {
-            var ents = noa.entities
+            const ents = noa.entities
             if (ents.hasPhysics(eid)) {
                 ents.getPhysicsBody(eid).onCollide = null
             }
