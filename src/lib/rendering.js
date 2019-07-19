@@ -9,10 +9,6 @@ if (!BABYLON) {
     throw new Error('Babylon.js reference not found! Abort! Abort!')
 }
 
-export default function (noa, opts, canvas) {
-    return new Rendering(noa, opts, canvas)
-}
-
 var vec3 = BABYLON.Vector3 // not a gl-vec3, in this module only!!
 var col3 = BABYLON.Color3
 
@@ -49,7 +45,7 @@ var defaults = {
  * @classdesc Manages all rendering.
 */
 
-class Rendering {
+export default class Rendering {
     constructor(noa, opts, canvas) {
         this.noa = noa
         opts = Object.assign({}, defaults, opts)

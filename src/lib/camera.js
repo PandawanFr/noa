@@ -1,10 +1,3 @@
-export default function (noa, opts) {
-    return new CameraController(noa, opts)
-}
-
-
-
-
 var defaults = {
     rotationScaleX: 0.0025,
     rotationScaleY: 0.0025,
@@ -20,7 +13,7 @@ var defaults = {
  */
 
 
-class CameraController {
+export default class CameraController {
     constructor(noa, opts) {
         this.noa = noa
 

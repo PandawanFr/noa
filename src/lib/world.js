@@ -3,11 +3,6 @@ import {EventEmitter} from 'events'
 import Chunk from './chunk'
 import { Timer } from './util'
 
-export default function (noa, opts) {
-    return new World(noa, opts)
-}
-
-
 var PROFILE = 0
 var PROFILE_QUEUES = 0
 
@@ -30,7 +25,7 @@ var defaultOptions = {
  * Extends `EventEmitter`
  */
 
-class World extends EventEmitter {
+export default class World extends EventEmitter {
     constructor(noa, opts) {
         super()
 

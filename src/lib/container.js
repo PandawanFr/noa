@@ -1,10 +1,6 @@
 import createGameShell from 'game-shell'
 import {EventEmitter} from 'events'
 
-export default function (noa, opts) {
-    return new Container(noa, opts)
-}
-
 /**
  * @class
  * @typicalname noa.container
@@ -13,7 +9,7 @@ export default function (noa, opts) {
  * and manages HTML container, canvas, etc.
  */
 
-class Container extends EventEmitter {
+export default class Container extends EventEmitter {
     constructor(noa, opts) {
         super()
 

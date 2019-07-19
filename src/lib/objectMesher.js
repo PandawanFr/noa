@@ -9,17 +9,14 @@ var PROFILE = 0
 
 
 // helper class to hold data about a single object mesh
-function ObjMeshDat(id, x, y, z) {
+class ObjMeshDat{
+    constructor(id, x, y, z) {
     this.id = id | 0
     this.x = x | 0
     this.y = y | 0
     this.z = z | 0
+    }
 }
-
-
-
-
-
 
 
 /*
@@ -32,21 +29,24 @@ function ObjMeshDat(id, x, y, z) {
  */
 
 
-function ObjectMesher() {
+class ObjectMesher {
+    constructor() {
+
+    }
 
 
     // adds properties to the new chunk that will be used when processing
-    this.initChunk = chunk => {
+    initChunk(chunk) {
         chunk._objectBlocks = {}
         chunk._mergedObjectSystems = []
     }
 
-    this.disposeChunk = chunk => {
-        removeCurrentSystems(chunk)
+    disposeChunk(chunk) {
+        this.removeCurrentSystems(chunk)
         chunk._objectBlocks = null
     }
 
-    function removeCurrentSystems(chunk) {
+    removeCurrentSystems(chunk) {
         var systems = chunk._mergedObjectSystems
         while (systems.length) {
             var sps = systems.pop()
@@ -61,12 +61,12 @@ function ObjectMesher() {
 
 
     // accessors for the chunk to regester as object voxels are set/unset
-    this.addObjectBlock = (chunk, id, x, y, z) => {
+    addObjectBlock(chunk, id, x, y, z) {
         var key = x + '|' + y + '|' + z
         chunk._objectBlocks[key] = new ObjMeshDat(id, x, y, z, null)
     }
 
-    this.removeObjectBlock = (chunk, x, y, z) => {
+    removeObjectBlock(chunk, x, y, z){
         var key = x + '|' + y + '|' + z
         if (chunk._objectBlocks[key]) delete chunk._objectBlocks[key]
     }
@@ -80,10 +80,10 @@ function ObjectMesher() {
      * 
      */
 
-    this.buildObjectMesh = chunk => {
+    buildObjectMesh(chunk) {
         profile_hook('start')
         // remove the current (if any) sps/mesh
-        removeCurrentSystems(chunk)
+        this.removeCurrentSystems(chunk)
 
         var scene = chunk.noa.rendering.getScene()
         var objectMeshLookup = chunk.noa.registry._blockMeshLookup
@@ -119,7 +119,7 @@ function ObjectMesher() {
         for (var ix in matIndexes) {
 
             var meshHash = matIndexes[ix]
-            var sps = buildSPSforMaterialIndex(chunk, scene, meshHash, x0, y0, z0)
+            var sps = this.buildSPSforMaterialIndex(chunk, scene, meshHash, x0, y0, z0)
             profile_hook('made SPS')
 
             // build SPS into the scene
@@ -144,7 +144,7 @@ function ObjectMesher() {
 
 
 
-    function buildSPSforMaterialIndex(chunk, scene, meshHash, x0, y0, z0) {
+    buildSPSforMaterialIndex(chunk, scene, meshHash, x0, y0, z0) {
         var blockHash = chunk._objectBlocks
         // base sps
         var sps = new BABYLON.SolidParticleSystem('object_sps_' + chunk.id, scene, {

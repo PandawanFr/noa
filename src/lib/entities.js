@@ -14,11 +14,6 @@ import movementComponent from '../components/movement'
 import receivesInputsComponent from '../components/receivesInputs'
 import fadeOnZoomComponent from '../components/fadeOnZoom'
 
-
-export default function (noa, opts) {
-    return new Entities(noa, opts)
-}
-
 var defaults = {
     shadowDistance: 10,
 }
@@ -37,7 +32,7 @@ var defaults = {
  * Expects entity definitions in a specific format - see source `components` folder for examples.
  */
 
-class Entities extends EntComp {
+export default class Entities extends EntComp {
     constructor(noa, opts) {
         // inherit from the ECS library
         super()

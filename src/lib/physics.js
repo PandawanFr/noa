@@ -1,10 +1,5 @@
 import createPhysics from 'voxel-physics-engine'
 
-export default function (noa, opts) {
-    return makePhysics(noa, opts)
-}
-
-
 /**
  * @class Physics
  * @typicalname noa.physics
@@ -19,7 +14,7 @@ var defaults = {
 }
 
 
-function makePhysics(noa, opts) {
+export default function makePhysics(noa, opts) {
     opts = Object.assign({}, defaults, opts)
     var world = noa.world
     var blockGetter = (x, y, z) => world.getBlockSolidity(x, y, z)

@@ -1,7 +1,3 @@
-var constants = {}
-export default constants
-
-
 /* 
  *  Internal voxel data representation
  *
@@ -31,8 +27,10 @@ var OBJECT_BIT = 1 << n++
 
 // exports
 
-constants.ID_MASK = ID_MASK
-constants.VAR_MASK = VAR_MASK
-constants.SOLID_BIT = SOLID_BIT
-constants.OPAQUE_BIT = OPAQUE_BIT
-constants.OBJECT_BIT = OBJECT_BIT
+export default {
+    ID_MASK,
+    VAR_MASK,
+    SOLID_BIT,
+    OPAQUE_BIT,
+    OBJECT_BIT
+}

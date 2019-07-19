@@ -10,14 +10,14 @@ import vec3 from 'gl-vec3'
 
 import ndarray from 'ndarray'
 import {EventEmitter} from 'events'
-import createContainer from './lib/container'
-import createRendering from './lib/rendering'
-import createWorld from './lib/world'
+import Container from './lib/container'
+import Rendering from './lib/rendering'
+import World from './lib/world'
 import createInputs from './lib/inputs'
 import createPhysics from './lib/physics'
-import createCamControls from './lib/camera'
-import createRegistry from './lib/registry'
-import createEntities from './lib/entities'
+import CameraController from './lib/camera'
+import Registry from './lib/registry'
+import Entities from './lib/entities'
 import raycast from 'fast-voxel-raycast'
 
 import constants from './lib/constants'
@@ -101,7 +101,7 @@ export default class Engine extends EventEmitter {
         /**
          * container (html/div) manager
          */
-        this.container = createContainer(this, opts)
+        this.container = new Container(this, opts)
 
         /**
          * inputs manager - abstracts key/mouse input
@@ -111,22 +111,22 @@ export default class Engine extends EventEmitter {
         /**
          * block/item property registry
          */  
-        this.registry = createRegistry(this, opts)
+        this.registry = new Registry(this, opts)
 
         /**
          * world manager
          */  
-        this.world = createWorld(this, opts)
+        this.world = new World(this, opts)
 
         /**
          * Rendering manager
          */
-        this.rendering = createRendering(this, opts, this.container.canvas)
+        this.rendering = new Rendering(this, opts, this.container.canvas)
 
         /** Entity manager / Entity Component System (ECS) 
          * Aliased to `noa.ents` for convenience.
          */
-        this.entities = createEntities(this, opts)
+        this.entities = new Entities(this, opts)
         this.ents = this.entities
 
         // how far engine is into the current tick. Updated each render.
@@ -140,7 +140,7 @@ export default class Engine extends EventEmitter {
         /**
          * Manages camera, view angle, etc.
          */
-        this.cameraControls = createCamControls(this, opts)
+        this.cameraControls = new CameraController(this, opts)
 
 
         var ents = this.ents

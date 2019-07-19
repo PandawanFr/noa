@@ -1,10 +1,5 @@
 import createInputs from 'game-inputs'
 
-export default function (noa, opts, element) {
-    return makeInputs(noa, opts, element)
-}
-
-
 /**
  * @class Inputs
  * @typicalname noa.inputs
@@ -29,7 +24,7 @@ var defaultBindings = {
 }
 
 
-function makeInputs(noa, opts, element) {
+export default function makeInputs(noa, opts, element) {
     opts = Object.assign({}, defaultBindings, opts)
     var inputs = createInputs(element, opts)
     var b = opts.bindings
