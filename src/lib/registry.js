@@ -133,9 +133,9 @@ export default class Registry {
          * @param {boolean} lazyInit Whether or not to initialize lazily
          * @returns {number} The material's id
          */
-        this.getMaterialId = (matIDs, name, lazyInit) => {
+        this.getMaterialId = (name, lazyInit) => {
             if (!name) return 0
-            let id = matIDs[name]
+            let id = this._matIDs[name]
             if (id === undefined && lazyInit) id = this.registerMaterial(name)
             return id
         }
@@ -180,7 +180,7 @@ export default class Registry {
      *  * solid: (true) solidity for physics purposes
      *  * opaque: (true) fully obscures neighboring blocks
      *  * fluid: (false) whether nonsolid block is a fluid (buoyant, viscous..)
-     *  * blockMeshes: (null) if specified, noa will create an instance of the mesh instead of rendering voxel terrain
+     *  * blockMesh: (null) if specified, noa will create an instance of the mesh instead of rendering voxel terrain
      *  * fluidDensity: (1.0) for fluid blocks
      *  * viscosity: (0.5) for fluid blocks
      *  * onLoad(): block event handler
@@ -234,7 +234,7 @@ export default class Registry {
 
         // argument is material name, but store as material id, allocating one if needed
         for (let i = 0; i < 6; ++i) {
-            this._blockMats[id * 6 + i] = this.getMaterialId(this._matIDs, mats[i], true)
+            this._blockMats[id * 6 + i] = this.getMaterialId(mats[i], true)
         }
 
         // props data object - currently only used for fluid properties
