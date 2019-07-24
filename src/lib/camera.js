@@ -92,7 +92,7 @@ export default class Camera {
         this.cameraTarget = this.noa.ents.createEntity(['position'])
 
         // follow component and default offset
-        var eyeOffset = 0.9 * noa.ents.getPositionData(noa.playerEntity).height
+        const eyeOffset = 0.9 * noa.ents.getPositionData(noa.playerEntity).height
         noa.ents.addComponent(this.cameraTarget, 'followsEntity', {
             entity: noa.playerEntity,
             offset: [0, eyeOffset, 0],

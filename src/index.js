@@ -151,12 +151,6 @@ export default class Engine extends EventEmitter {
          */
         this.physics = createPhysics(this, opts)
 
-        /**
-         * Manages camera, view angle, etc.
-         */
-        this.camera = new Camera(this, opts)
-
-
         const ents = this.ents
 
         /** Entity id for the player entity */
@@ -193,6 +187,11 @@ export default class Engine extends EventEmitter {
             airJumps: 1
         }
         ents.addComponent(this.playerEntity, ents.names.movement, moveOpts)
+
+        /**
+         * Manages camera, view angle, etc.
+         */
+        this.camera = new Camera(this, opts)
 
         // set up block targeting
         this.blockTestDistance = opts.blockTestDistance
@@ -472,7 +471,7 @@ var _prevTargetHash = ''
 function deprecateStuff(noa) {
     var ver = `0.27`
     var dep = (loc, name, msg) => {
-        var throwFn = () => { throw `This method was removed in ${ver} - ${msg}` }
+        var throwFn = () => { throw `Incorrect usage of method ${name} was removed in ${ver} - ${msg}` }
         Object.defineProperty(loc, name, { get: throwFn, set: throwFn })
     }
     dep(noa, 'getPlayerEyePosition', 'to get the camera/player offset see API docs for `noa.camera.cameraTarget`')
