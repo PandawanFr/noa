@@ -141,7 +141,7 @@ function ObjectMesher() {
     function buildSPSforMaterialIndex(chunk, scene, meshHash, x0, y0, z0) {
         const blockHash = chunk._objectBlocks
         // base sps
-        const sps = new BABYLON.SolidParticleSystem(`object_sps_${chunk.id}`, scene, {
+        const sps = new chunk.noa.BABYLON.SolidParticleSystem(`object_sps_${chunk.id}`, scene, {
             updatable: false,
         })
 

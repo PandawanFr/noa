@@ -9,9 +9,11 @@
 var noaEngine = require('../..')
 
 var opts = {
+    babylon: require('./babylon'),
     debug: true,
     showFPS: true,
     inverseY: true,
+    inverseX: false,
     chunkSize: 32,
     chunkAddDistance: 2,
     chunkRemoveDistance: 3,
@@ -30,6 +32,10 @@ var opts = {
 
 // create engine
 var noa = noaEngine(opts)
+var scene = noa.rendering.getScene()
+
+
+
 
 
 //		World generation
@@ -53,15 +59,16 @@ noa.registry.registerMaterial('water', [0.5, 0.5, 0.8, 0.7], null)
 var shinyMat = noa.rendering.makeStandardMaterial('shinyDirtMat')
 shinyMat.specularColor.copyFromFloats(1, 1, 1)
 shinyMat.specularPower = 32
-shinyMat.bumpTexture = new BABYLON.Texture('textures/stone.png', scene)
+shinyMat.bumpTexture = new noa.BABYLON.Texture('textures/stone.png', scene)
 noa.registry.registerMaterial('shinyDirt', brownish, null, false, shinyMat)
 
 
 // object block mesh
-var mesh = BABYLON.Mesh.CreateBox('b', 1, noa.rendering.getScene())
-var mat = BABYLON.Matrix.Scaling(0.2, 1, 0.2)
-mat.setTranslation(new BABYLON.Vector3(0, 0.5, 0))
+var mesh = noa.BABYLON.Mesh.CreateBox('b', 1, scene)
+var mat = noa.BABYLON.Matrix.Scaling(0.2, 1, 0.2)
+mat.setTranslation(new noa.BABYLON.Vector3(0, 0.5, 0))
 mesh.bakeTransformIntoVertices(mat)
+scene.removeMesh(mesh)
 
 
 // block types registration
@@ -173,8 +180,7 @@ var w = dat.width
 var h = dat.height
 
 // make a Babylon.js mesh and scale it, etc.
-var scene = noa.rendering.getScene()
-var playerMesh = BABYLON.Mesh.CreateBox('player', 1, scene)
+var playerMesh = noa.BABYLON.Mesh.CreateBox('player', 1, scene)
 playerMesh.scaling.x = playerMesh.scaling.z = w
 playerMesh.scaling.y = h
 
@@ -211,16 +217,13 @@ noa.inputs.down.on('mid-fire', function () {
 
 
 // each tick, consume any scroll events and use them to zoom camera
-var zoom = 0
 noa.on('tick', function (dt) {
     var scroll = noa.inputs.state.scrolly
-    if (scroll === 0) return
-
-    // handle zoom controls
-    zoom += (scroll > 0) ? 1 : -1
-    if (zoom < 0) zoom = 0
-    if (zoom > 10) zoom = 10
-    noa.rendering.zoomDistance = zoom
+    if (scroll !== 0) {
+        noa.camera.zoomDistance += (scroll > 0) ? 1 : -1
+        if (noa.camera.zoomDistance < 0) noa.camera.zoomDistance = 0
+        if (noa.camera.zoomDistance > 10) noa.camera.zoomDistance = 10
+    }
 })
 
 

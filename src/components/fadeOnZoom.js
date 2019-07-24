@@ -20,7 +20,7 @@ export default function (noa) {
         onRemove: null,
 
         system: function fadeOnZoomProc(dt, states) {
-            const zoom = noa.rendering._currentZoom
+            const zoom = noa.camera.currentZoom
             const ents = noa.entities
             states.forEach(state => {
                 checkZoom(state, state.__id, zoom, ents)

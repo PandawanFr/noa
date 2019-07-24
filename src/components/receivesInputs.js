@@ -22,7 +22,7 @@ export default function (noa) {
         system: function inputProcessor(dt, states) {
             const ents = noa.entities
             const inputState = noa.inputs.state
-            const camHeading = noa.rendering.getCameraRotation()[1]
+            const camHeading = noa.camera.heading
 
             states.forEach(state => {
                 const moveState = ents.getMovement(state.__id)

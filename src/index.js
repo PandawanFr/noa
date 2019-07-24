@@ -7,7 +7,6 @@
 import pkg from '../package.json'
 
 import vec3 from 'gl-vec3'
-
 import ndarray from 'ndarray'
 import { EventEmitter } from 'events'
 import Container from './lib/container'
@@ -15,7 +14,7 @@ import Rendering from './lib/rendering'
 import World from './lib/world'
 import createInputs from './lib/inputs'
 import createPhysics from './lib/physics'
-import CameraController from './lib/camera'
+import Camera from './lib/camera'
 import Registry from './lib/registry'
 import Entities from './lib/entities'
 import raycast from 'fast-voxel-raycast'
@@ -32,6 +31,7 @@ const DEBUG_QUEUES = 0
 
 
 const defaults = {
+    babylon: null,
     debug: false,
     silent: false,
     playerHeight: 1.8,
@@ -52,6 +52,7 @@ const defaults = {
  * 
  * ```js
  * var opts = {
+ *     babylon: require('babylon'), // import your preferred version of bablyon.js here!
  *     debug: false,
  *     silent: false,
  *     playerHeight: 1.8,
@@ -67,6 +68,13 @@ const defaults = {
  * var NoaEngine = require('noa-engine')
  * var noa = NoaEngine(opts)
  * ```
+ * The only required option is `babylon`, which should be a reference to 
+ * a [Babylon.js](https://www.babylonjs.com) engine. 
+ * If none is specified, `noa` will use `window.BABYLON`,
+ * or failing that, throw an error.
+ * 
+ * Note that the root `opts` parameter object is also passed to noa's child modules 
+ * (e.g. `noa.rendering`) - see those modules for which options they use.
  * 
  * @class
  * @alias Noa
@@ -87,16 +95,25 @@ export default class Engine extends EventEmitter {
         /**  version string, e.g. `"0.25.4"` */
         this.version = pkg.version
 
-        if (!opts.silent) {
-            const debugstr = (opts.debug) ? ' (debug)' : ''
-            console.log(`noa-engine v${this.version}${debugstr}`)
-        }
-
         opts = Object.assign({}, defaults, opts)
         this._tickRate = opts.tickRate
         this._paused = false
         this._dragOutsideLock = opts.dragCameraOutsidePointerLock
         const self = this
+
+        if (!opts.silent) {
+            var debugstr = (opts.debug) ? ' (debug)' : ''
+            console.log(`noa-engine v${this.version}${debugstr}`)
+        }
+    
+        /** Reference to the Babylon.js engine, either passed in or from `window.BABYLON` */
+        this.BABYLON = opts.babylon || window.BABYLON
+        if (!this.BABYLON || !this.BABYLON.Engine) {
+            throw new Error('Babylon.js engine reference not found! Abort! Abort!')
+        }
+
+        // how far engine is into the current tick. Updated each render.
+        this.positionInCurrentTick = 0
 
         /**
          * container (html/div) manager
@@ -129,9 +146,6 @@ export default class Engine extends EventEmitter {
         this.entities = new Entities(this, opts)
         this.ents = this.entities
 
-        // how far engine is into the current tick. Updated each render.
-        this.positionInCurrentTick = 0
-
         /**
          * physics engine - solves collisions, properties, etc.
          */
@@ -140,7 +154,7 @@ export default class Engine extends EventEmitter {
         /**
          * Manages camera, view angle, etc.
          */
-        this.cameraControls = new CameraController(this, opts)
+        this.camera = new Camera(this, opts)
 
 
         const ents = this.ents
@@ -180,12 +194,6 @@ export default class Engine extends EventEmitter {
         }
         ents.addComponent(this.playerEntity, ents.names.movement, moveOpts)
 
-        // how high above the player's position the eye is (for picking, camera tracking)  
-        this.playerEyeOffset = 0.9 * opts.playerHeight
-
-
-
-
         // set up block targeting
         this.blockTestDistance = opts.blockTestDistance
 
@@ -209,9 +217,6 @@ export default class Engine extends EventEmitter {
             this.on('targetBlockChanged', this.defaultBlockHighlightFunction)
         }
 
-        // init rendering stuff that needed to wait for engine internals
-        this.rendering.initScene()
-
         // expose constants, for HACKING™
         this._constants = constants
 
@@ -230,8 +235,7 @@ export default class Engine extends EventEmitter {
             })
         }
 
-
-
+        deprecateStuff(this)
     }
 
     /*
@@ -277,26 +281,31 @@ export default class Engine extends EventEmitter {
 
     render(framePart) {
         if (this._paused) return
+        profile_hook_render('start')
         // update frame position property and calc dt
         let framesAdvanced = framePart - this.positionInCurrentTick
         if (framesAdvanced < 0) framesAdvanced += 1
         this.positionInCurrentTick = framePart
         const dt = framesAdvanced * this._tickRate // ms since last tick
         // core render:
-        profile_hook_render('start')
         // only move camera during pointerlock or mousedown, or if pointerlock is unsupported
         if (this.container.hasPointerLock ||
             !this.container.supportsPointerLock ||
             (this._dragOutsideLock && this.inputs.state.fire)) {
-            this.cameraControls.updateForRender()
+            this.camera.applyInputsToCamera()
         }
         // clear cumulative mouse inputs
         this.inputs.state.dx = this.inputs.state.dy = 0
+        
         // events and render
+        this.camera.updateBeforeEntityRenderSystems()
         this.emit('beforeRender', dt)
+        this.camera.updateAfterEntityRenderSystems()
         profile_hook_render('before render')
+
         this.rendering.render(dt)
         profile_hook_render('render')
+
         this.emit('afterRender', dt)
         profile_hook_render('after render')
         profile_hook_render('end')
@@ -353,39 +362,6 @@ export default class Engine extends EventEmitter {
         }
     }
 
-    /** */
-    getPlayerPosition() {
-        return this.entities.getPosition(this.playerEntity)
-    }
-
-    /** */
-    getPlayerMesh() {
-        return this.entities.getMeshData(this.playerEntity).mesh
-    }
-
-    /** */
-    setPlayerEyeOffset(y) {
-        this.playerEyeOffset = y
-        const state = this.ents.getState(this.rendering.cameraTarget, this.ents.names.followsEntity)
-        state.offset[1] = y
-    }
-
-    /** */
-    getPlayerEyePosition() {
-        const pos = this.entities.getPosition(this.playerEntity)
-        vec3.copy(_eyeLoc, pos)
-        _eyeLoc[1] += this.playerEyeOffset
-        return _eyeLoc
-    }
-
-    /** */
-    getCameraVector() {
-        // rendering works with babylon's xyz vectors
-        const v = this.rendering.getCameraVector()
-        vec3.set(_camVec, v.x, v.y, v.z)
-        return _camVec
-    }
-
     /**
      * Raycast through the world, returning a result object for any non-air block
      * @param pos
@@ -401,8 +377,8 @@ export default class Engine extends EventEmitter {
             const id = world.getBlockID(x, y, z)
             return testFn(id)
         }
-        pos = pos || this.getPlayerEyePosition()
-        vec = vec || this.getCameraVector()
+        pos = pos || this.camera.getTargetPosition()
+        vec = vec || this.camera.getDirection()
         dist = dist || this.blockTestDistance
         const rpos = _hitResult.position
         const rnorm = _hitResult.normal
@@ -439,25 +415,10 @@ function debugQueues(self) {
     }
 }
 
-
-
-
-
-
-var _eyeLoc = vec3.create()
-
-var _camVec = vec3.create()
-
-
-
 var _hitResult = {
     position: vec3.create(),
     normal: vec3.create(),
 }
-
-
-
-
 
 
 
@@ -502,6 +463,32 @@ var _prevTargetHash = ''
 
 
 
+/*
+ * 
+ *  add some hooks for guidance on removed APIs
+ * 
+ */
+
+function deprecateStuff(noa) {
+    var ver = `0.27`
+    var dep = (loc, name, msg) => {
+        var throwFn = () => { throw `This method was removed in ${ver} - ${msg}` }
+        Object.defineProperty(loc, name, { get: throwFn, set: throwFn })
+    }
+    dep(noa, 'getPlayerEyePosition', 'to get the camera/player offset see API docs for `noa.camera.cameraTarget`')
+    dep(noa, 'setPlayerEyePosition', 'to set the camera/player offset see API docs for `noa.camera.cameraTarget`')
+    dep(noa, 'getPlayerPosition', 'use `noa.ents.getPosition(noa.playerEntity)` or similar')
+    dep(noa, 'getCameraVector', 'use `noa.camera.getDirection`')
+    dep(noa, 'getPlayerMesh', 'use `noa.ents.getMeshData(noa.playerEntity).mesh` or similar')
+    dep(noa, 'playerBody', 'use `noa.ents.getPhysicsBody(noa.playerEntity)`')
+    dep(noa.rendering, 'zoomDistance', 'use `noa.camera.zoomDistance`')
+    dep(noa.rendering, '_currentZoom', 'use `noa.camera.currentZoom`')
+    dep(noa.rendering, '_cameraZoomSpeed', 'use `noa.camera.zoomSpeed`')
+    dep(noa.rendering, 'getCameraVector', 'use `noa.camera.getDirection`')
+    dep(noa.rendering, 'getCameraPosition', 'use `noa.camera.getPosition`')
+    dep(noa.rendering, 'getCameraRotation', 'use `noa.camera.heading` and `noa.camera.pitch`')
+    dep(noa.rendering, 'setCameraRotation', 'to customize camera behavior see API docs for `noa.camera`')
+}
 
 
 

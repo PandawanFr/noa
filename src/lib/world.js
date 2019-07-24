@@ -334,7 +334,7 @@ function setChunk(world, i, j, k, value) {
 
 
 function getPlayerChunkCoords(world) {
-    const pos = world.noa.getPlayerPosition()
+    const pos = world.noa.entities.getPosition(world.noa.playerEntity)
     const i = worldCoordToChunkCoord(pos[0])
     const j = worldCoordToChunkCoord(pos[1])
     const k = worldCoordToChunkCoord(pos[2])

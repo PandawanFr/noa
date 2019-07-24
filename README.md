@@ -67,8 +67,11 @@ For code style/formatting, the repo includes config files for [eslint](https://e
 ## Recent changes:
 
  * 0.26.0
+   * Moves all camera-related APIs to `noa.camera`, removes several redundant APIs
+   * Component systems now fire in a fixed order, see [components.md](components.md)
+   * Fixes order of various render logic, to avoid temporal aliasing bugs
+   * Can now pass in a `babylon.js` reference, doesn't need to be in global
    * Render events now pass correct `dt` argument - see issue #53
-   * Bug fix to physics, workaround for bug in current mac/chrome
  * 0.25.0
    * Adds `debug` option: populates `window` with useful references, binds `Z` to BJS inspector
    * Now current with Babylon.js 4.0

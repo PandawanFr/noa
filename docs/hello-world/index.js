@@ -25,6 +25,7 @@
 var noaEngine = require('../..')
 
 var opts = {
+    babylon: require('./babylon'),
     // 
     // 		Random sampling of some possible options:
     // 
@@ -32,6 +33,7 @@ var opts = {
     showFPS: true,
     // silent: false,
     // inverseY: true,
+    // inverseX: false,
     // chunkSize: 32,
     // chunkAddDistance: 1,
     // chunkRemoveDistance: 3,
@@ -108,7 +110,7 @@ var h = dat.height
 
 // make a Babylon.js mesh and scale it, etc.
 var scene = noa.rendering.getScene()
-var mesh = BABYLON.Mesh.CreateBox('player', 1, scene)
+var mesh = noa.BABYLON.Mesh.CreateBox('player', 1, scene)
 mesh.scaling.x = mesh.scaling.z = w
 mesh.scaling.y = h
 
@@ -151,5 +153,5 @@ noa.on('tick', function (dt) {
     zoom += (scroll > 0) ? 1 : -1
     if (zoom < 0) zoom = 0
     if (zoom > 10) zoom = 10
-    noa.rendering.zoomDistance = zoom
+    noa.camera.zoomDistance = zoom
 })

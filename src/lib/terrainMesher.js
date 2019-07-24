@@ -106,11 +106,12 @@ class Submesh {
 function MeshBuilder() {
 
     let noa
-
+    let BABYLON
 
     // core
     this.build = (chunk, meshdata, ignoreMaterials) => {
         noa = chunk.noa
+        BABYLON = noa.BABYLON
 
         // preprocess meshdata entries to merge those that will use default terrain material
         const mergeCriteria = mdat => {
@@ -246,7 +247,7 @@ function MeshBuilder() {
 
 
     function buildMeshFromSubmesh(submesh, name, mats, verts, inds) {
-
+        
         // base mesh and vertexData object
         const scene = noa.rendering.getScene()
         const mesh = new BABYLON.Mesh(name, scene)

@@ -3,8 +3,8 @@ import createPhysics from 'voxel-physics-engine'
 /**
  * @class Physics
  * @typicalname noa.physics
- * @classdesc Wrapper module for the 
- * [physics engine](https://github.com/andyhall/voxel-physics-engine)
+ * @classdesc Wrapper module for the physics engine. For docs see 
+ * [andyhall/voxel-physics-engine](https://github.com/andyhall/voxel-physics-engine)
  */
 
 
