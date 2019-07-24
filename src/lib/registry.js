@@ -18,6 +18,7 @@ const defaults = {
 
 const blockDefaults = {
     solid: true,
+    targetable: true,
     opaque: true,
     fluidDensity: 1.0,
     viscosity: 0.5,
@@ -42,6 +43,7 @@ export default class Registry {
         // lookup arrays for block props and flags - all keyed by blockID
         // fill in first value for id=0, empty space
         this._blockSolidity = [false]
+        this._blockIsTargetable = [false]
         this._blockOpacity = [false]
         this._blockIsFluid = [false]
         this._blockMats = [0, 0, 0, 0, 0, 0]
@@ -93,6 +95,11 @@ export default class Registry {
          * @param id
          */
         this.getBlockSolidity = id => this._blockSolidity[id]
+
+        /**
+         * Whether or not the block can be targetted
+         */
+        this.getBlockTargetability = id => this._blockIsTargetable[id]
 
         /**
          * block opacity - whether it obscures the whole voxel (dirt) or 
@@ -178,6 +185,7 @@ export default class Registry {
      *      * array of 6 names: [-x, +x, -y, +y, -z, +z]
      *    If not specified, terrain won't be meshed for the block type
      *  * solid: (true) solidity for physics purposes
+     *  * targetable: (true) wether or not it can be targetted by the player
      *  * opaque: (true) fully obscures neighboring blocks
      *  * fluid: (false) whether nonsolid block is a fluid (buoyant, viscous..)
      *  * blockMesh: (null) if specified, noa will create an instance of the mesh instead of rendering voxel terrain
@@ -192,6 +200,7 @@ export default class Registry {
 
     registerBlock(id, _options = {}) {
         blockDefaults.solid = !_options.fluid
+        blockDefaults.targetable = !_options.fluid
         blockDefaults.opaque = !_options.fluid
         const opts = Object.assign({}, blockDefaults, _options)
 
@@ -204,8 +213,9 @@ export default class Registry {
             this.registerBlock(this._blockSolidity.length, {})
         }
 
-        // flags default to solid, opaque, nonfluid
+        // flags default to solid, targetable, opaque, nonfluid
         this._blockSolidity[id] = !!opts.solid
+        this._blockIsTargetable[id] = !!opts.targetable
         this._blockOpacity[id] = !!opts.opaque
         this._blockIsFluid[id] = !!opts.fluid
 

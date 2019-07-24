@@ -191,7 +191,7 @@ export default class Engine extends EventEmitter {
 
         /** function for which block IDs are targetable. 
          * Defaults to a solidity check, but can be overridden */
-        this.blockTargetIdCheck = this.registry.getBlockSolidity
+        this.blockTargetIdCheck = this.registry.getBlockTargetability
 
         /** Dynamically updated object describing the currently targeted block */
         this.targetedBlock = null
@@ -395,7 +395,7 @@ export default class Engine extends EventEmitter {
     pick(pos, vec, dist, blockIdTestFunction) {
         if (dist === 0) return null
         // if no block ID function is specified default to solidity check
-        const testFn = blockIdTestFunction || this.registry.getBlockSolidity
+        const testFn = blockIdTestFunction || this.registry.getBlockTargetability
         const world = this.world
         const testVoxel = (x, y, z) => {
             const id = world.getBlockID(x, y, z)
@@ -465,7 +465,7 @@ var _hitResult = {
 // and tell rendering to highlight the struck block face
 function updateBlockTargets(noa) {
     let newhash = ''
-    const blockIdFn = noa.blockTargetIdCheck || noa.registry.getBlockSolidity
+    const blockIdFn = noa.blockTargetIdCheck || noa.registry.getBlockTargetability
     const result = noa.pick(null, null, null, blockIdFn)
     if (result) {
         const dat = _targetedBlockDat

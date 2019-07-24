@@ -510,6 +510,7 @@ Register (by integer ID) a block type and its parameters.
      * array of 6 names: [-x, +x, -y, +y, -z, +z]
    If not specified, terrain won't be meshed for the block type
  * solid: (true) solidity for physics purposes
+ * targetable: (true) wether or not it can be targetted by the player
  * opaque: (true) fully obscures neighboring blocks
  * fluid: (false) whether nonsolid block is a fluid (buoyant, viscous..)
  * blockMeshes: (null) if specified, noa will create an instance of the mesh instead of rendering voxel terrain
