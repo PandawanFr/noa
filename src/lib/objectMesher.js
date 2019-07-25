@@ -148,6 +148,13 @@ function ObjectMesher() {
         const blockHandlerLookup = chunk.noa.registry._blockHandlerLookup
         const objectMeshLookup = chunk.noa.registry._blockMeshLookup
 
+        /* 
+            TODO: According to https://doc.babylonjs.com/how_to/solid_particle_system, Solid Particle Systems retain their singular meshes separately and can therefore be "animated"
+                This can be done by setting SPS.updateParticle(particle), there you should be able to use particle as a regular mesh object.
+                After modifying the mesh, simply call SPS.setParticles() during the `beforeRender` event to refresh the SPS and render it.
+                Also, remember to make the SPS.updatable: true (constructor above)
+        */
+
         // run through mesh hash adding shapes and position functions
         for (const blockID in meshHash) {
             const mesh = objectMeshLookup[blockID]

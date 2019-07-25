@@ -24,6 +24,7 @@ let n = ID_BITS + VAR_BITS
 const SOLID_BIT = 1 << n++
 const OPAQUE_BIT = 1 << n++
 const OBJECT_BIT = 1 << n++
+// TODO: Make Orientation variations
 
 // exports
 

@@ -107,6 +107,7 @@ export default class Engine extends EventEmitter {
         }
     
         /** Reference to the Babylon.js engine, either passed in or from `window.BABYLON` */
+        /** @type {import('babylonjs')} */
         this.BABYLON = opts.babylon || window.BABYLON
         if (!this.BABYLON || !this.BABYLON.Engine) {
             throw new Error('Babylon.js engine reference not found! Abort! Abort!')

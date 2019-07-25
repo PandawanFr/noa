@@ -11,6 +11,7 @@ const defaults = {
     antiAlias: true,
     clearColor: [0.8, 0.9, 1],
     ambientColor: [1, 1, 1],
+    lightIntensity: 1,
     lightDiffuse: [1, 1, 1],
     lightSpecular: [1, 1, 1],
     groundLightColor: [0.5, 0.5, 0.5],
@@ -41,6 +42,7 @@ export default class Rendering {
          *   antiAlias: true,
          *   clearColor: [0.8, 0.9, 1],
          *   ambientColor: [1, 1, 1],
+         *   lightIntensity: 1,
          *   lightDiffuse: [1, 1, 1],
          *   lightSpecular: [1, 1, 1],
          *   groundLightColor: [0.5, 0.5, 0.5],
@@ -113,6 +115,15 @@ export default class Rendering {
         this._camLocBlock = 0
 
         // apply some defaults
+        /*
+            TODO: Setup custom light system.
+                First, remove this HemisphericLight because it lights up the entire level and prevents shadows from appearing.
+                Second, set every mesh (probably do that in Chunk.js, or something) to `receiveShadows: true`
+                Then, add lights where wanted (Note: make sure their ranges aren't too far because they can travel through walls), perhaps make a cone light so it doesn't do it through walls?
+                Then, make sure to enable/disable lights that are furthest from player. 
+                    (This might not be needed, it seems that each Material can only ever be affected by 4 lights, but I'm not sure if each chunk has its own material or shares one).
+        */
+       
         var lightVec = new BABYLON.Vector3(0.1, 1, 0.3)
         this._light = new BABYLON.HemisphericLight('light', lightVec, scene)
 
@@ -122,7 +133,9 @@ export default class Rendering {
         this._light.diffuse = arrToColor(opts.lightDiffuse)
         this._light.specular = arrToColor(opts.lightSpecular)
         this._light.groundColor = arrToColor(opts.groundLightColor)
-
+        this._light.intensity = opts.lightIntensity
+        
+        
         // make a default flat material (used or clone by terrain, etc)
         this.flatMaterial = this.makeStandardMaterial('flatmat')
 
@@ -233,6 +246,8 @@ export default class Rendering {
         // handle remover when mesh gets disposed
         const remover = this.removeMeshFromScene.bind(this, mesh)
         mesh.onDisposeObservable.add(remover)
+        // Add mesh lighting/shadows
+        if (mesh._currentNoaChunk) mesh.receiveShadows = true
     }
 
     /**  Undoes everything `addMeshToScene` does
