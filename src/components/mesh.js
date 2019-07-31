@@ -15,6 +15,8 @@ export default function (noa) {
 
         onAdd: function (eid, state) {
             if (state.mesh) {
+                // Keep a reference of the entity's ID in the mesh
+                state.mesh._entityId = eid
                 noa.rendering.addMeshToScene(state.mesh)
             } else {
                 throw new Error('Mesh component added without a mesh - probably a bug!')

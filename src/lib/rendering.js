@@ -31,6 +31,11 @@ const defaults = {
  */
 
 export default class Rendering {
+    /**
+     * @param {import('../index').default} noa 
+     * @param {any} opts 
+     * @param {HTMLCanvasElement} canvas 
+     */
     constructor(noa, opts, canvas) {
         this.noa = noa
 
