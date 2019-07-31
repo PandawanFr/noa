@@ -15,6 +15,7 @@ const defaults = {
     lightDiffuse: [1, 1, 1],
     lightSpecular: [1, 1, 1],
     groundLightColor: [0.5, 0.5, 0.5],
+    maxSimultaneousLights: 4,
     useAO: true,
     AOmultipliers: [0.93, 0.8, 0.5],
     reverseAOmultiplier: 1.0,
@@ -51,6 +52,7 @@ export default class Rendering {
          *   lightDiffuse: [1, 1, 1],
          *   lightSpecular: [1, 1, 1],
          *   groundLightColor: [0.5, 0.5, 0.5],
+         *   maxSimultaneousLights: 4,
          *   useAO: true,
          *   AOmultipliers: [0.93, 0.8, 0.5],
          *   reverseAOmultiplier: 1.0,
@@ -71,6 +73,8 @@ export default class Rendering {
         this._resizeDebounce = 250 // ms
         this._pendingResize = false
         this._highlightPos = glvec3.create()
+
+        this._maxSimultaneousLights = opts.maxSimultaneousLights
 
         // set up babylon scene
         this.initScene(canvas, opts)
@@ -294,6 +298,7 @@ export default class Rendering {
         mat.specularColor.copyFromFloats(0, 0, 0)
         mat.ambientColor.copyFromFloats(1, 1, 1)
         mat.diffuseColor.copyFromFloats(1, 1, 1)
+        mat.maxSimultaneousLights = this._maxSimultaneousLights
         return mat
     }
 
