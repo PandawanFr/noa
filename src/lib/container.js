@@ -89,7 +89,7 @@ function createContainerDiv() {
     // based on github.com/mikolalysenko/game-shell - makeDefaultContainer()
     const container = document.createElement("div")
     container.tabindex = 1
-    container.style.position = "absolute"
+    container.style.position = "fixed"
     container.style.left = "0px"
     container.style.right = "0px"
     container.style.top = "0px"
