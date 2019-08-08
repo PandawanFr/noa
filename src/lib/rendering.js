@@ -153,6 +153,7 @@ export default class Rendering {
     /**
      * The Babylon `scene` object representing the game world.
      * @member
+     * @returns {import('babylonjs').Scene}
      */
     getScene() {
         return this._scene
