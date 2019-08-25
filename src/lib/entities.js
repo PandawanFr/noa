@@ -42,6 +42,7 @@ export default class Entities extends EntComp {
 
         // properties
         // Hash containing the component names of built-in components.
+        /** @type {object} */
         this.names = {}
 
         // options
