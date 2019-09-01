@@ -122,7 +122,7 @@ export default class Entities extends EntComp {
         const box = _blockAABB
         const eps = 0.001
         box.setPosition([x + eps, y + eps, z + eps])
-        const hits = this.getEntitiesInAABB(box, this.names.collideTerrain)
+        const hits = this.getEntitiesInAABB(box, { withComponent: this.names.collideTerrain })
         return (hits.length > 0)
     }
 
@@ -140,14 +140,23 @@ export default class Entities extends EntComp {
         }
     }
 
-    /** @param box */
-    getEntitiesInAABB(box, withComponent) {
+    /** 
+     * @param box 
+     * @param {{ withComponent?: string, excludeComponent?: string }} options
+     */
+    getEntitiesInAABB(box, { withComponent, excludeComponent }) {
         // TODO - use bipartite box-intersect?
         const hits = []
         const self = this
-        let posArr = (withComponent) ?
-            self.getStatesList(withComponent).map(state => self.getPositionData(state.__id)) :
-            posArr = self.getStatesList(this.names.position)
+        let posArr = (withComponent) 
+            ? self.getStatesList(withComponent).map(state => self.getPositionData(state.__id)) 
+            : self.getStatesList(this.names.position)
+        
+        if (excludeComponent) {
+            const listToExclude = self.getStatesList(excludeComponent).map((state) => state.__id);
+            posArr = posArr.filter((posState) => (posState !== undefined && !listToExclude.includes(posState.__id)));
+        }
+
         const tmpBox = _searchBox
         for (let i = 0; i < posArr.length; i++) {
             setAABBFromPosition(tmpBox, posArr[i])
