@@ -39,7 +39,7 @@
     "devDependencies": {
         "eslint": "^5.16.0",
         "js-beautify": "^1.10.2",
-        "jsdoc-to-markdown": "^5.0.0",
+        "jsdoc-to-markdown": "^5.0.1",
         "webpack": "^4.39.3",
         "webpack-cli": "^3.3.7",
         "webpack-dev-server": "^3.8.0"
