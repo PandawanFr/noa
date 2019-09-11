@@ -155,6 +155,14 @@ function ObjectMesher() {
                 Also, remember to make the SPS.updatable: true (constructor above)
         */
 
+        /* This doc https://doc.babylonjs.com/how_to/solid_particle_system#create-an-immutable-sps
+         * explains that there are two ways to create immutable (cached/better performance SPS)
+         * 1. Do the above, but make sure that the SPS.setParticles() is only called when the object is dirty/different from the previous ones.
+         * 2. Do what noa currently does, which is marking the SPS as updatable: true
+         * 
+         * TODO: Mention that in GitHub issue https://github.com/andyhall/noa/issues/83
+         */
+
         // run through mesh hash adding shapes and position functions
         for (const blockID in meshHash) {
             const mesh = objectMeshLookup[blockID]
