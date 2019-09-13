@@ -37,6 +37,7 @@
         "url": "https://github.com/andyhall/noa/issues"
     },
     "devDependencies": {
+        "@babel/core": "^7.6.0",
         "eslint": "^5.16.0",
         "js-beautify": "^1.10.2",
         "jsdoc-to-markdown": "^5.0.1",
