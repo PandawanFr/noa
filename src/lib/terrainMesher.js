@@ -6,7 +6,7 @@ import { Texture } from '@babylonjs/core/Materials/Textures/texture'
 import '@babylonjs/core/Meshes/meshBuilder'
 
 import { makeProfileHook } from './util'
-import { constants } from './constants'
+import constants from './constants'
 
 export default new TerrainMesher()
 

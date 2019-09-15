@@ -1,5 +1,6 @@
 import vec3 from 'gl-vec3'
-import { Mesh, Color3 } from '@babylonjs/core'
+import { Mesh } from '@babylonjs/core/Meshes/mesh';
+import { Color3 } from '@babylonjs/core/Maths/math'
 
 export default function (noa, dist) {
 

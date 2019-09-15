@@ -9,9 +9,6 @@ module.exports = {
         es6: true,
         node: true,
     },
-    globals: {
-        "BABYLON": "readonly",
-    },
     rules: {
         strict: ["error", "global"],
 

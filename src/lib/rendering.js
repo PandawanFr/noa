@@ -11,6 +11,7 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
 import { Vector3, Color3 } from '@babylonjs/core/Maths/math'
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import '@babylonjs/core/Meshes/meshBuilder'
+import '@babylonjs/core/Culling/ray';
 
 // profiling flags
 const PROFILE = 0
@@ -118,10 +119,10 @@ export default class Rendering {
         */
        
         // apply some defaults
-        var lightVec = new BABYLON.Vector3(0.1, 1, 0.3)
-        this._light = new BABYLON.HemisphericLight('light', lightVec, scene)
+        var lightVec = new Vector3(0.1, 1, 0.3)
+        this._light = new HemisphericLight('light', lightVec, scene)
 
-        function arrToColor(a) { return new BABYLON.Color3(a[0], a[1], a[2]) }
+        function arrToColor(a) { return new Color3(a[0], a[1], a[2]) }
         scene.clearColor = arrToColor(opts.clearColor)
         scene.ambientColor = arrToColor(opts.ambientColor)
         this._light.diffuse = arrToColor(opts.lightDiffuse)

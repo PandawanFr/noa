@@ -642,7 +642,6 @@ if (PROFILE_QUEUES)(() => {
 })()
 
 
-import { makeProfileHook } from './util'
 var profile_hook = (PROFILE) ?
     makeProfileHook(200, 'world ticks') : () => {}
 
