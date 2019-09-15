@@ -47,6 +47,7 @@ function Entities(noa, opts) {
         'shadow': opts.shadowDistance,
     }
 
+    // TODO: Don't use bundler magic as this becomes bundler specific. I use parcel, not webpack, so this doesn't work.
     // Bundler magic to import everything in the ../components directory
     // each component module exports a default function: (noa) => compDefinition
     var reqContext = require.context('../components/', false, /\.js$/)
@@ -162,16 +163,60 @@ function setAABBFromPosition(box, posData) {
 }
 
 
+// TODO: Test this, it should work
 /** @param box */
-Entities.prototype.getEntitiesInAABB = function (box, withComponent) {
+Entities.prototype.getEntitiesInAABB = function (box, withComponents = this.names.position, excludeComponents) {
     // TODO - use bipartite box-intersect?
     var hits = []
     var self = this
-    var posArr = (withComponent) ?
-        self.getStatesList(withComponent).map(function (state) {
-            return self.getPositionData(state.__id)
-        }) :
-        posArr = self.getStatesList(this.names.position)
+
+    if (!withComponents || !withComponents.length) {
+        withComponents = this.names.position;
+    }
+
+    var posArr = (Array.isArray(withComponents) 
+        // Supports multiple withComponents
+        ? (
+            // Loop through every component and get every entity that has all of them
+            withComponents
+                // Convert component names to entity IDs (that have it)
+                .map(component => self.getStatesList(component))
+                .map(states => states.map(state => state.__id))
+                // Only keep IDs that are common to all of the arrays
+                .reduce((arr1, arr2) => arr1.filter((val) => arr2.includes(val)))
+                // Convert all IDs to Position datas
+                .map(id => self.getPositionData(id))
+        ) 
+        // Only one component is specified
+        : (
+            self.getStatesList(withComponents)
+                .map(state => self.getPositionData(state.__id))
+        )
+    )
+
+    if (excludeComponents) {
+        // Create a lsit of all entity IDs that should be excluded
+        var entitiesToExclude = Array.isArray(excludeComponents)
+            // Supports multiple exclueComponents
+            ? (
+                excludeComponents
+                    // Convert component names to entity IDs (that have it)
+                    .map((component => self.getStatesList(component)))
+                    .map(states => states.map(state => state.__id))
+                    // Flatten to get a full list of all IDs (don't worry about duplicates)
+                    .flat()
+            )
+            // Only one component is specified
+            : (
+                self.getStatesList(excludeComponents)
+                    .map(state => state.__id)
+            )
+
+        // Filter to keep those that are not included in the toExclude list
+        posArr.filter(posState => !entitiesToExclude.includes(posState.__id));
+    }
+
+
     var tmpBox = _searchBox
     for (var i = 0; i < posArr.length; i++) {
         setAABBFromPosition(tmpBox, posArr[i])
