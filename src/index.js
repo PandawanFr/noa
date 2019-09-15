@@ -471,7 +471,7 @@ var _prevTargetHash = ''
 function deprecateStuff(noa) {
     var ver = `0.27`
     var dep = (loc, name, msg) => {
-        var throwFn = () => { throw `This method was removed in ${ver} - ${msg}` }
+        var throwFn = () => { throw `Method ${name} was removed in ${ver} - ${msg}` }
         Object.defineProperty(loc, name, { get: throwFn, set: throwFn })
     }
     dep(noa, 'getPlayerEyePosition', 'to get the camera/player offset see API docs for `noa.camera.cameraTarget`')

@@ -32,9 +32,11 @@ var defaults = {
     antiAlias: true,
     clearColor: [0.8, 0.9, 1],
     ambientColor: [1, 1, 1],
+    lightIntensity: 1,
     lightDiffuse: [1, 1, 1],
     lightSpecular: [1, 1, 1],
     groundLightColor: [0.5, 0.5, 0.5],
+    maxSimultaneousLights: 4,
     useAO: true,
     AOmultipliers: [0.93, 0.8, 0.5],
     reverseAOmultiplier: 1.0,
@@ -61,9 +63,11 @@ function Rendering(noa, opts, canvas) {
      *   antiAlias: true,
      *   clearColor: [0.8, 0.9, 1],
      *   ambientColor: [1, 1, 1],
+     *   lightIntensity: 1,
      *   lightDiffuse: [1, 1, 1],
      *   lightSpecular: [1, 1, 1],
      *   groundLightColor: [0.5, 0.5, 0.5],
+    *    maxSimultaneousLights: 4,
      *   useAO: true,
      *   AOmultipliers: [0.93, 0.8, 0.5],
      *   reverseAOmultiplier: 1.0,
@@ -82,6 +86,7 @@ function Rendering(noa, opts, canvas) {
     this.meshingCutoffTime = 6 // ms
     this._dynamicMeshOctrees = opts.useOctreesForDynamicMeshes
     this._resizeDebounce = 250 // ms
+    this._maxSimultaneousLights = opts.maxSimultaneousLights;
 
     // set up babylon scene
     initScene(this, canvas, opts)
@@ -132,6 +137,7 @@ function initScene(self, canvas, opts) {
     function arrToColor(a) { return new Color3(a[0], a[1], a[2]) }
     scene.clearColor = arrToColor(opts.clearColor)
     scene.ambientColor = arrToColor(opts.ambientColor)
+    self._light.intensity = opts.lightIntensity;
     self._light.diffuse = arrToColor(opts.lightDiffuse)
     self._light.specular = arrToColor(opts.lightSpecular)
     self._light.groundColor = arrToColor(opts.groundLightColor)
@@ -241,6 +247,9 @@ Rendering.prototype.addMeshToScene = function (mesh, isStatic) {
     // handle remover when mesh gets disposed
     var remover = this.removeMeshFromScene.bind(this, mesh)
     mesh.onDisposeObservable.add(remover)
+
+    // Let newly added chunk mesh receive shadows
+    if (mesh._currentNoaChunk) mesh.receiveShadows = true;
 }
 
 
@@ -316,6 +325,7 @@ Rendering.prototype.makeStandardMaterial = function (name) {
     mat.specularColor.copyFromFloats(0, 0, 0)
     mat.ambientColor.copyFromFloats(1, 1, 1)
     mat.diffuseColor.copyFromFloats(1, 1, 1)
+    mat.maxSimultaneousLights = this._maxSimultaneousLights;
     return mat
 }
 
@@ -437,7 +447,7 @@ function getHighlightMesh(rendering) {
         m = rendering._highlightMesh = mesh
         // outline
         var s = 0.5
-        var lines = Mesh.CreateLines("hightlightLines", [
+        var lines = Mesh.CreateLines("highlightLines", [
             new Vector3(s, s, 0),
             new Vector3(s, -s, 0),
             new Vector3(-s, -s, 0),
