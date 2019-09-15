@@ -5,9 +5,8 @@
         "docs/**/babylon.js": true
     },
     "editor.detectIndentation": true,
-
     "editor.defaultFormatter": "HookyQR.beautify",
-
     "eslint.enable": true,
     "javascript.format.enable": false,
+    "standard.enable": false
 }
