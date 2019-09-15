@@ -28,6 +28,7 @@ var defaults = {
 
 var blockDefaults = {
     solid: true,
+    targetable: true,
     opaque: true,
     fluidDensity: 1.0,
     viscosity: 0.5,
@@ -58,6 +59,7 @@ function Registry(noa, opts) {
     // lookup arrays for block props and flags - all keyed by blockID
     // fill in first value for id=0, empty space
     var blockSolidity = [false]
+    var blockTargetablility = [false]
     var blockOpacity = [false]
     var blockIsFluid = [false]
     var blockMats = [0, 0, 0, 0, 0, 0]
@@ -97,9 +99,10 @@ function Registry(noa, opts) {
      *      * array of 6 names: [-x, +x, -y, +y, -z, +z]
      *    If not specified, terrain won't be meshed for the block type
      *  * solid: (true) solidity for physics purposes
+     *  * targetable: (true) whether block can be targeted (allows non-solid to be targeted)
      *  * opaque: (true) fully obscures neighboring blocks
      *  * fluid: (false) whether nonsolid block is a fluid (buoyant, viscous..)
-     *  * blockMeshes: (null) if specified, noa will create an instance of the mesh instead of rendering voxel terrain
+     *  * blockMesh: (null) if specified, noa will create an instance of the mesh instead of rendering voxel terrain
      *  * fluidDensity: (1.0) for fluid blocks
      *  * viscosity: (0.5) for fluid blocks
      *  * onLoad(): block event handler
@@ -111,8 +114,11 @@ function Registry(noa, opts) {
 
     this.registerBlock = function (id, _options) {
         _options = _options || {}
-        blockDefaults.solid = !_options.fluid
-        blockDefaults.opaque = !_options.fluid
+        /*
+            TODO: Find out why Andy did this?
+            blockDefaults.solid = !_options.fluid
+            blockDefaults.opaque = !_options.fluid
+        */
         var opts = Object.assign({}, blockDefaults, _options)
 
         // console.log('register block: ', id, opts)
@@ -126,6 +132,7 @@ function Registry(noa, opts) {
 
         // flags default to solid, opaque, nonfluid
         blockSolidity[id] = !!opts.solid
+        blockTargetablility[id] = !!opts.targetable;
         blockOpacity[id] = !!opts.opaque
         blockIsFluid[id] = !!opts.fluid
 
@@ -216,6 +223,10 @@ function Registry(noa, opts) {
      */
     this.getBlockSolidity = function (id) {
         return blockSolidity[id]
+    }
+
+    this.getBlockTargetability = function (id) {
+        return blockTargetablility[id];
     }
 
     /**

@@ -195,8 +195,8 @@ function Engine(opts) {
     this.blockTestDistance = opts.blockTestDistance
 
     /** function for which block IDs are targetable. 
-     * Defaults to a solidity check, but can be overridden */
-    this.blockTargetIdCheck = this.registry.getBlockSolidity
+     * Defaults to a targetability check, but can be overridden */
+    this.blockTargetIdCheck = this.registry.getBlockTargetability
 
     /** Dynamically updated object describing the currently targeted block */
     this.targetedBlock = null
@@ -393,7 +393,7 @@ Engine.prototype.addBlock = function (id, x, y, z) {
 Engine.prototype.pick = function (pos, vec, dist, blockIdTestFunction) {
     if (dist === 0) return null
     // if no block ID function is specified default to solidity check
-    var testFn = blockIdTestFunction || this.registry.getBlockSolidity
+    var testFn = blockIdTestFunction || this.registry.getBlockTargetability
     var world = this.world
     var testVoxel = function (x, y, z) {
         var id = world.getBlockID(x, y, z)
@@ -425,7 +425,7 @@ var _hitResult = {
 // and tell rendering to highlight the struck block face
 function updateBlockTargets(noa) {
     var newhash = ''
-    var blockIdFn = noa.blockTargetIdCheck || noa.registry.getBlockSolidity
+    var blockIdFn = noa.blockTargetIdCheck || noa.registry.getBlockTargetability
     var result = noa.pick(null, null, null, blockIdFn)
     if (result) {
         var dat = _targetedBlockDat
