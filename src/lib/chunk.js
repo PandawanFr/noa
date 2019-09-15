@@ -1,12 +1,10 @@
-import constants from './constants'
 import ndarray from 'ndarray'
 
 // shared references to terrain/object meshers
 import terrainMesher from './terrainMesher'
-
 import objectMesher from './objectMesher'
 
-
+import constants from './constants'
 
 
 /* 

@@ -20,18 +20,17 @@ import Entities from './lib/entities'
 import raycast from 'fast-voxel-raycast'
 
 import constants from './lib/constants'
-import util from './lib/util'
+import { makeProfileHook } from './lib/util'
 
 // profiling flag
 const PROFILE = 0
 const PROFILE_RENDER = 0
-const DEBUG_QUEUES = 0
+// const DEBUG_QUEUES = 0
 
 
 
 
 const defaults = {
-    babylon: null,
     debug: false,
     silent: false,
     playerHeight: 1.8,
@@ -52,7 +51,6 @@ const defaults = {
  * 
  * ```js
  * var opts = {
- *     babylon: require('babylon'), // import your preferred version of bablyon.js here!
  *     debug: false,
  *     silent: false,
  *     playerHeight: 1.8,
@@ -68,13 +66,11 @@ const defaults = {
  * var NoaEngine = require('noa-engine')
  * var noa = NoaEngine(opts)
  * ```
- * The only required option is `babylon`, which should be a reference to 
- * a [Babylon.js](https://www.babylonjs.com) engine. 
- * If none is specified, `noa` will use `window.BABYLON`,
- * or failing that, throw an error.
  * 
- * Note that the root `opts` parameter object is also passed to noa's child modules 
- * (e.g. `noa.rendering`) - see those modules for which options they use.
+ * All option parameters are, well, optional. Note that 
+ * the root `opts` parameter object is also passed to 
+ * noa's child modules (rendering, camera, etc). 
+ * See docs for each module for which options they use.
  * 
  * @class
  * @alias Noa
@@ -104,13 +100,6 @@ export default class Engine extends EventEmitter {
         if (!opts.silent) {
             var debugstr = (opts.debug) ? ' (debug)' : ''
             console.log(`noa-engine v${this.version}${debugstr}`)
-        }
-    
-        /** Reference to the Babylon.js engine, either passed in or from `window.BABYLON` */
-        /** @type {import('babylonjs')} */
-        this.BABYLON = opts.babylon || window.BABYLON
-        if (!this.BABYLON || !this.BABYLON.Engine) {
-            throw new Error('Babylon.js engine reference not found! Abort! Abort!')
         }
 
         // how far engine is into the current tick. Updated each render.
@@ -270,8 +259,9 @@ export default class Engine extends EventEmitter {
         this.emit('tick', dt)
         profile_hook('tick event')
         profile_hook('end')
-        this.inputs.tick() // clears accumulated tick/mouseMove data
-        if (DEBUG_QUEUES) debugQueues(this)
+
+        // clear accumulated mouseMove inputs (scroll inputs cleared on render)
+        this.inputs.state.dx = this.inputs.state.dy = 0
     }
 
     /*
@@ -309,6 +299,9 @@ export default class Engine extends EventEmitter {
         this.emit('afterRender', dt)
         profile_hook_render('after render')
         profile_hook_render('end')
+
+        // clear accumulated mouseMove inputs (scroll inputs cleared on render)
+        this.inputs.state.dx = this.inputs.state.dy = 0
     }
 
     /*
@@ -391,30 +384,6 @@ export default class Engine extends EventEmitter {
 }
 
 
-let __qwasDone = true
-let __qstart
-
-function debugQueues(self) {
-    const a = self.world._chunkIDsToAdd.length
-    const b = self.world._chunkIDsToCreate.length
-    const c = self.rendering._chunksToMesh.length
-    const d = self.rendering._numMeshedChunks
-    if (a + b + c > 0) console.log([
-        'Chunks:', 'unmade', a,
-        'pending creation', b,
-        'to mesh', c,
-        'meshed', d,
-    ].join('   \t'))
-    if (__qwasDone && a + b + c > 0) {
-        __qwasDone = false
-        __qstart = performance.now()
-    }
-    if (!__qwasDone && a + b + c === 0) {
-        __qwasDone = true
-        console.log(`Queue empty after ${Math.round(performance.now() - __qstart)}ms`)
-    }
-}
-
 var _hitResult = {
     position: vec3.create(),
     normal: vec3.create(),
@@ -494,21 +463,10 @@ function deprecateStuff(noa) {
 
 
 
-var profile_hook = s => {}
-var profile_hook_render = s => {}
-if (PROFILE)(() => {
-    const timer = new(util.Timer)(200, 'tick   ')
-    profile_hook = state => {
-        if (state === 'start') timer.start()
-        else if (state === 'end') timer.report()
-        else timer.add(state)
-    }
-})()
-if (PROFILE_RENDER)(() => {
-    const timer = new(util.Timer)(200, 'render ')
-    profile_hook_render = state => {
-        if (state === 'start') timer.start()
-        else if (state === 'end') timer.report()
-        else timer.add(state)
-    }
-})()
+
+
+var profile_hook = (PROFILE) ?
+    makeProfileHook(200, 'tick   ') : () => {}
+var profile_hook_render = (PROFILE_RENDER) ?
+    makeProfileHook(200, 'render ') : () => {}
+

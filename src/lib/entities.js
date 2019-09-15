@@ -19,7 +19,6 @@ const defaults = {
 }
 
 
-
 /**
  * @class Entities
  * @typicalname noa.ents

@@ -1,7 +1,7 @@
 import ndHash from 'ndarray-hash'
 import { EventEmitter } from 'events'
 import Chunk from './chunk'
-import { Timer } from './util'
+import { makeProfileHook } from './util'
 
 const PROFILE = 0
 const PROFILE_QUEUES = 0
@@ -484,6 +484,9 @@ function _modifyBlockData(world, i, j, k, x, y, z, val) {
 
 // rebuild queue of chunks to be added around (ci,cj,ck)
 function buildChunkAddQueue(world, ci, cj, ck) {
+
+    // TODO: make this more sane
+    
     const add = Math.ceil(world.chunkAddDistance)
     const pending = world._chunkIDsToCreate
     const queue = []
@@ -639,13 +642,8 @@ if (PROFILE_QUEUES)(() => {
 })()
 
 
-var profile_hook = s => {}
-if (PROFILE)(() => {
-    const every = 200
-    const timer = new(Timer)(every, 'world ticks')
-    profile_hook = state => {
-        if (state === 'start') timer.start()
-        else if (state === 'end') timer.report()
-        else timer.add(state)
-    }
-})()
+import { makeProfileHook } from './util'
+var profile_hook = (PROFILE) ?
+    makeProfileHook(200, 'world ticks') : () => {}
+
+

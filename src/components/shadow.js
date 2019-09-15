@@ -1,7 +1,5 @@
 import vec3 from 'gl-vec3'
-
-const down = vec3.fromValues(0, -1, 0)
-const shadowPos = vec3.fromValues(0, 0, 0)
+import { Mesh, Color3 } from '@babylonjs/core'
 
 export default function (noa, dist) {
 
@@ -9,11 +7,11 @@ export default function (noa, dist) {
 
     // create a mesh to re-use for shadows
     const scene = noa.rendering.getScene()
-    const disc = noa.BABYLON.Mesh.CreateDisc('shadow', 0.75, 30, scene)
+    const disc = Mesh.CreateDisc('shadow', 0.75, 30, scene)
     disc.rotation.x = Math.PI / 2
     disc.material = noa.rendering.makeStandardMaterial('shadowMat')
-    disc.material.diffuseColor = noa.BABYLON.Color3.Black()
-    disc.material.ambientColor = noa.BABYLON.Color3.Black()
+    disc.material.diffuseColor = Color3.Black()
+    disc.material.ambientColor = Color3.Black()
     disc.material.alpha = 0.5
     disc.setEnabled(false)
 
@@ -67,6 +65,9 @@ export default function (noa, dist) {
 
     }
 }
+
+const down = vec3.fromValues(0, -1, 0)
+const shadowPos = vec3.fromValues(0, 0, 0)
 
 function updateShadowHeight(id, mesh, size, shadowDist, camPos, noa) {
     const ents = noa.entities

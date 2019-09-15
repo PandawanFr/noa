@@ -13,7 +13,7 @@ export function removeUnorderedListItem(list, item) {
 
 
 // simple thing for reporting time split up between several activities
-export function Timer(_every, _title) {
+export function makeProfileHook(_every, _title) {
     const title = _title || ''
     const every = _every || 1
     const times = []
@@ -49,5 +49,10 @@ export function Timer(_every, _title) {
             iter = 0
             total = 0
         }
+    }
+    return function profile_hook(state) {
+        if (state === 'start') start()
+        else if (state === 'end') report()
+        else add(state)
     }
 }

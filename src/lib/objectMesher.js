@@ -1,4 +1,6 @@
-import {removeUnorderedListItem, Timer} from './util'
+import { removeUnorderedListItem, makeProfileHook } from './util'
+import { SolidParticleSystem } from '@babylonjs/core/Particles/solidParticleSystem'
+
 export default new ObjectMesher()
 
 
@@ -141,7 +143,7 @@ function ObjectMesher() {
     function buildSPSforMaterialIndex(chunk, scene, meshHash, x0, y0, z0) {
         const blockHash = chunk._objectBlocks
         // base sps
-        const sps = new chunk.noa.BABYLON.SolidParticleSystem(`object_sps_${chunk.id}`, scene, {
+        var sps = new SolidParticleSystem('object_sps_' + chunk.id, scene, {
             updatable: false,
         })
 
@@ -196,16 +198,8 @@ function ObjectMesher() {
 
 }
 
+var profile_hook = (PROFILE) ?
+    makeProfileHook(50, 'Object meshing') : () => {}
 
 
-
-var profile_hook = (() => {
-    if (!PROFILE) return () => {}
-    const every = 50
-    const timer = new(Timer)(every, 'Object meshing')
-    return state => {
-        if (state === 'start') timer.start()
-        else if (state === 'end') timer.report()
-        else timer.add(state)
-    }
-})()
+    
