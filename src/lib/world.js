@@ -28,6 +28,7 @@ var defaultOptions = {
  * @emits chunkAdded(chunk)
  * @emits chunkChanged(chunk)
  * @emits chunkBeingRemoved(id, ndarray, userData)
+ * @emits chunkMeshUpdated(chunk) Called when the chunk's mesh has been updated
  * @classdesc Manages the world and its chunks
  * 
  * Extends `EventEmitter`
@@ -407,6 +408,7 @@ function processMeshingQueues(self, firstOnly) {
         return
     }
     chunk.updateMeshes()
+    self.emit('chunkMeshUpdated', chunk);
 
     profile_queues(self, 'meshed')
     profile_hook('meshed')
