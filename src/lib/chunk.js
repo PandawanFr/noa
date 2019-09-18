@@ -1,7 +1,7 @@
 'use strict'
 
 
-var ndarray = require('ndarray')
+import ndarray from 'ndarray'
 
 // shared references to terrain/object meshers
 import terrainMesher from './terrainMesher'

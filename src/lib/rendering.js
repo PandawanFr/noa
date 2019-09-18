@@ -1,6 +1,6 @@
 'use strict'
 
-var glvec3 = require('gl-vec3')
+import glvec3 from 'gl-vec3'
 import { removeUnorderedListItem } from './util'
 
 import { Scene } from '@babylonjs/core/scene'
@@ -86,7 +86,7 @@ function Rendering(noa, opts, canvas) {
     this.meshingCutoffTime = 6 // ms
     this._dynamicMeshOctrees = opts.useOctreesForDynamicMeshes
     this._resizeDebounce = 250 // ms
-    this._maxSimultaneousLights = opts.maxSimultaneousLights;
+    this._maxSimultaneousLights = opts.maxSimultaneousLights
 
     // set up babylon scene
     initScene(this, canvas, opts)
@@ -137,7 +137,7 @@ function initScene(self, canvas, opts) {
     function arrToColor(a) { return new Color3(a[0], a[1], a[2]) }
     scene.clearColor = arrToColor(opts.clearColor)
     scene.ambientColor = arrToColor(opts.ambientColor)
-    self._light.intensity = opts.lightIntensity;
+    self._light.intensity = opts.lightIntensity
     self._light.diffuse = arrToColor(opts.lightDiffuse)
     self._light.specular = arrToColor(opts.lightSpecular)
     self._light.groundColor = arrToColor(opts.groundLightColor)
@@ -249,7 +249,7 @@ Rendering.prototype.addMeshToScene = function (mesh, isStatic) {
     mesh.onDisposeObservable.add(remover)
 
     // Let newly added chunk mesh receive shadows
-    if (mesh._currentNoaChunk) mesh.receiveShadows = true;
+    if (mesh._currentNoaChunk) mesh.receiveShadows = true
 }
 
 
@@ -325,7 +325,7 @@ Rendering.prototype.makeStandardMaterial = function (name) {
     mat.specularColor.copyFromFloats(0, 0, 0)
     mat.ambientColor.copyFromFloats(1, 1, 1)
     mat.diffuseColor.copyFromFloats(1, 1, 1)
-    mat.maxSimultaneousLights = this._maxSimultaneousLights;
+    mat.maxSimultaneousLights = this._maxSimultaneousLights
     return mat
 }
 

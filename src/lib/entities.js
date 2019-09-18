@@ -1,10 +1,10 @@
 'use strict'
 
-var aabb = require('aabb-3d')
-var vec3 = require('gl-vec3')
+import aabb from 'aabb-3d'
+import vec3 from 'gl-vec3'
 
-import EntComp from 'ent-comp';
-import components from '../components/*.js';
+import EntComp from 'ent-comp'
+import components from '../components/*.js'
 // var EntComp = require('../../../../npm-modules/ent-comp')
 
 
@@ -51,34 +51,15 @@ function Entities(noa, opts) {
     }
 
     // NOTE: Ideally there'd be no import magic as it becomes bundler-specific, but it's relatively cleaner to keep it this way...
-    // Webpack import magic
-    if (require.context !== undefined) {
-        // Bundler magic to import everything in the ../components directory
-        // each component module exports a default function: (noa) => compDefinition
-        var reqContext = require.context('../components/', false, /\.js$/);
-        reqContext.keys().forEach(name => {
-            // convert name ('./foo.js') to bare name ('foo')
-            var bareName = /\.\/(.*)\.js/.exec(name)[1]
-            var arg = componentArgs[bareName] || undefined
-            var compFn = reqContext(name)
-            if (compFn.default) compFn = compFn.default
-            var compDef = compFn(noa, arg)
-            var comp = this.createComponent(compDef)
-            this.names[bareName] = comp
-        })
-    }
-    // Wildcard import magic (Parcel)
-    else {
-        for (var componentName in components) {
-            if (components.hasOwnProperty(componentName)) {
-                var componentFunction = components[componentName];
-                if (componentFunction.default) componentFunction = componentFunction.default;
-                
-                var args = componentArgs[componentName] || undefined;
-                var componentDef = componentFunction(noa, args);
-                var component = this.createComponent(componentDef);
-                this.names[componentName] = component;
-            }
+    // Wildcard import magic (should work with webpack, only tried with parcel)
+    for (var componentName in components) {
+        if (components.hasOwnProperty(componentName)) {
+            var componentFunction = components[componentName]
+            if (componentFunction.default) componentFunction = componentFunction.default
+            var args = componentArgs[componentName] || undefined
+            var componentDef = componentFunction(noa, args)
+            var component = this.createComponent(componentDef)
+            this.names[componentName] = component
         }
     }
 
@@ -191,7 +172,7 @@ Entities.prototype.getEntitiesInAABB = function (box, withComponents = this.name
     var self = this
 
     if (!withComponents || !withComponents.length) {
-        withComponents = this.names.position;
+        withComponents = this.names.position
     }
 
     var posArr = (Array.isArray(withComponents) 
@@ -233,7 +214,7 @@ Entities.prototype.getEntitiesInAABB = function (box, withComponents = this.name
             )
 
         // Filter to keep those that are not included in the toExclude list
-        posArr.filter(posState => !entitiesToExclude.includes(posState.__id));
+        posArr.filter(posState => !entitiesToExclude.includes(posState.__id))
     }
 
 

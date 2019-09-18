@@ -7,10 +7,11 @@
  * @license  MIT
  */
 
-var vec3 = require('gl-vec3')
-var ndarray = require('ndarray')
-var raycast = require('fast-voxel-raycast')
-var EventEmitter = require('events').EventEmitter
+import vec3 from 'gl-vec3'
+
+import ndarray from 'ndarray'
+import raycast from 'fast-voxel-raycast'
+import { EventEmitter } from 'events'
 
 import createContainer from './lib/container'
 import createRendering from './lib/rendering'

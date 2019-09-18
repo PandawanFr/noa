@@ -1,7 +1,7 @@
 'use strict'
 
-var ndHash = require('ndarray-hash')
-var EventEmitter = require('events').EventEmitter
+import ndHash from 'ndarray-hash'
+import { EventEmitter } from 'events'
 import Chunk from './chunk'
 
 
@@ -408,7 +408,7 @@ function processMeshingQueues(self, firstOnly) {
         return
     }
     chunk.updateMeshes()
-    self.emit('chunkMeshUpdated', chunk);
+    self.emit('chunkMeshUpdated', chunk)
 
     profile_queues(self, 'meshed')
     profile_hook('meshed')

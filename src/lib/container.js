@@ -1,8 +1,8 @@
 'use strict'
 
-var createGameShell = require('game-shell')
+import createGameShell from 'game-shell'
 // var createGameShell = require('../../../../npm-modules/game-shell')
-var EventEmitter = require('events').EventEmitter
+import { EventEmitter } from 'events'
 
 
 export default function (noa, opts) {

@@ -1,6 +1,6 @@
 'use strict'
 
-var boxIntersect = require('box-intersect')
+import boxIntersect from 'box-intersect'
 
 
 /*

@@ -611,7 +611,7 @@ function GreedyMesher() {
                 }
 
 
-                // Add indexes, ordered clockwise for the facing direction;
+                // Add indexes, ordered clockwise for the facing direction
 
                 var vs = pos.length / 3 - 4
 

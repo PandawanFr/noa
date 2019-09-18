@@ -1,8 +1,8 @@
 'use strict'
 
-var vec3 = require('gl-vec3')
-var aabb = require('aabb-3d')
-var sweep = require('voxel-aabb-sweep')
+import vec3 from 'gl-vec3'
+import aabb from 'aabb-3d'
+import sweep from 'voxel-aabb-sweep'
 
 
 export default function(noa, opts) {

@@ -2,7 +2,7 @@
 
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { Color3 } from '@babylonjs/core/Maths/math'
-var vec3 = require('gl-vec3')
+import vec3 from 'gl-vec3'
 
 
 export default function (noa, dist) {

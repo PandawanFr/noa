@@ -1,6 +1,6 @@
 'use strict'
 
-var createPhysics = require('voxel-physics-engine')
+import createPhysics from 'voxel-physics-engine'
 // var createPhysics = require('../../../../npm-modules/voxel-physics-engine')
 
 

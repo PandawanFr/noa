@@ -1,6 +1,6 @@
 'use strict'
 
-var vec3 = require('gl-vec3')
+import vec3 from 'gl-vec3'
 
 
 export default function (noa) {
@@ -19,7 +19,7 @@ export default function (noa) {
         onAdd: function (eid, state) {
             if (state.mesh) {
                 // Keep a reference to the entity's ID in the mesh
-                state.mesh._entityId = eid;
+                state.mesh._entityId = eid
 
                 noa.rendering.addMeshToScene(state.mesh)
             } else {

@@ -132,7 +132,7 @@ function Registry(noa, opts) {
 
         // flags default to solid, opaque, nonfluid
         blockSolidity[id] = !!opts.solid
-        blockTargetablility[id] = !!opts.targetable;
+        blockTargetablility[id] = !!opts.targetable
         blockOpacity[id] = !!opts.opaque
         blockIsFluid[id] = !!opts.fluid
 
@@ -226,7 +226,7 @@ function Registry(noa, opts) {
     }
 
     this.getBlockTargetability = function (id) {
-        return blockTargetablility[id];
+        return blockTargetablility[id]
     }
 
     /**
