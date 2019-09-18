@@ -2,7 +2,9 @@
 
 var aabb = require('aabb-3d')
 var vec3 = require('gl-vec3')
-var EntComp = require('ent-comp')
+
+import EntComp from 'ent-comp';
+import components from '../components/*.js';
 // var EntComp = require('../../../../npm-modules/ent-comp')
 
 
@@ -23,6 +25,7 @@ var defaults = {
  * @class Entities
  * @typicalname noa.ents
  * @classdesc Wrangles entities. Aliased as `noa.ents`.
+ * @extends {EntComp}
  * 
  * This class is an instance of [ECS](https://github.com/andyhall/ent-comp), 
  * and as such implements the usual ECS methods.
@@ -47,20 +50,37 @@ function Entities(noa, opts) {
         'shadow': opts.shadowDistance,
     }
 
-    // TODO: Don't use bundler magic as this becomes bundler specific. I use parcel, not webpack, so this doesn't work.
-    // Bundler magic to import everything in the ../components directory
-    // each component module exports a default function: (noa) => compDefinition
-    var reqContext = require.context('../components/', false, /\.js$/)
-    reqContext.keys().forEach(name => {
-        // convert name ('./foo.js') to bare name ('foo')
-        var bareName = /\.\/(.*)\.js/.exec(name)[1]
-        var arg = componentArgs[bareName] || undefined
-        var compFn = reqContext(name)
-        if (compFn.default) compFn = compFn.default
-        var compDef = compFn(noa, arg)
-        var comp = this.createComponent(compDef)
-        this.names[bareName] = comp
-    })
+    // NOTE: Ideally there'd be no import magic as it becomes bundler-specific, but it's relatively cleaner to keep it this way...
+    // Webpack import magic
+    if (require.context !== undefined) {
+        // Bundler magic to import everything in the ../components directory
+        // each component module exports a default function: (noa) => compDefinition
+        var reqContext = require.context('../components/', false, /\.js$/);
+        reqContext.keys().forEach(name => {
+            // convert name ('./foo.js') to bare name ('foo')
+            var bareName = /\.\/(.*)\.js/.exec(name)[1]
+            var arg = componentArgs[bareName] || undefined
+            var compFn = reqContext(name)
+            if (compFn.default) compFn = compFn.default
+            var compDef = compFn(noa, arg)
+            var comp = this.createComponent(compDef)
+            this.names[bareName] = comp
+        })
+    }
+    // Wildcard import magic (Parcel)
+    else {
+        for (var componentName in components) {
+            if (components.hasOwnProperty(componentName)) {
+                var componentFunction = components[componentName];
+                if (componentFunction.default) componentFunction = componentFunction.default;
+                
+                var args = componentArgs[componentName] || undefined;
+                var componentDef = componentFunction(noa, args);
+                var component = this.createComponent(componentDef);
+                this.names[componentName] = component;
+            }
+        }
+    }
 
 
     // decorate the entities object with accessor functions
