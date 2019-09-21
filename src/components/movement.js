@@ -23,6 +23,7 @@ export default function (noa) {
             heading: 0, // radians
             running: false,
             jumping: false,
+            moveEffectMult: 1, // Multiplier for all movements
 
             // options:
             maxSpeed: 10,
@@ -86,6 +87,7 @@ function applyMovementPhysics(dt, state, body) {
         if (state._isJumping) { // continue previous jump
             if (state._currjumptime > 0) {
                 var jf = state.jumpForce
+                jf *= state.moveEffectMult
                 if (state._currjumptime < dt) jf *= state._currjumptime / dt
                 body.applyForce([0, jf, 0])
                 state._currjumptime -= dt
@@ -94,7 +96,9 @@ function applyMovementPhysics(dt, state, body) {
             state._isJumping = true
             if (!onGround) state._jumpCount++
             state._currjumptime = state.jumpTime
-            body.applyImpulse([0, state.jumpImpulse, 0])
+            var ji = state.jumpImpulse
+            ji *= state.moveEffectMult
+            body.applyImpulse([0, ji, 0])
             // clear downward velocity on airjump
             if (!onGround && body.velocity[1] < 0) body.velocity[1] = 0
         }
@@ -108,6 +112,7 @@ function applyMovementPhysics(dt, state, body) {
     if (state.running) {
 
         var speed = state.maxSpeed
+        speed *=  state.moveEffectMult;
         // todo: add crouch/sprint modifiers if needed
         // if (state.sprint) speed *= state.sprintMoveMult
         // if (state.crouch) speed *= state.crouchMoveMult
