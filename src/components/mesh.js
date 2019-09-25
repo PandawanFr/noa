@@ -17,25 +17,24 @@ export default function (noa) {
 
 
         onAdd: function (eid, state) {
+            // implicitly assume there's already a position component
+            var posDat = noa.ents.getPositionData(eid)
             if (state.mesh) {
                 // Keep a reference to the entity's ID in the mesh
                 state.mesh._entityId = eid
 
-                noa.rendering.addMeshToScene(state.mesh)
+                noa.rendering.addMeshToScene(state.mesh, false, posDat.position)
             } else {
                 throw new Error('Mesh component added without a mesh - probably a bug!')
             }
+            if (!state.offset) state.offset = new vec3.create()
 
-            if (!state.offset) {
-                state.offset = new vec3.create()
-            }
-
-            // initialize mesh to correct position
-            var pos = noa.ents.getPosition(eid)
-            var mpos = state.mesh.position
-            mpos.x = pos[0] + state.offset[0]
-            mpos.y = pos[1] + state.offset[1]
-            mpos.z = pos[2] + state.offset[2]
+            // set mesh to correct position
+            var rpos = posDat._renderPosition
+            state.mesh.position.copyFromFloats(
+                rpos[0] + state.offset[0],
+                rpos[1] + state.offset[1],
+                rpos[2] + state.offset[2])
         },
 
 
@@ -52,12 +51,11 @@ export default function (noa) {
             states.forEach(state => {
                 var id = state.__id
 
-                var rpos = noa.ents.getPositionData(id).renderPosition
-                var x = rpos[0] + state.offset[0]
-                var y = rpos[1] + state.offset[1]
-                var z = rpos[2] + state.offset[2]
-
-                state.mesh.position.copyFromFloats(x, y, z)
+                var rpos = noa.ents.getPositionData(id)._renderPosition
+                state.mesh.position.copyFromFloats(
+                    rpos[0] + state.offset[0],
+                    rpos[1] + state.offset[1],
+                    rpos[2] + state.offset[2])
             })
         }
 

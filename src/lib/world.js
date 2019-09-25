@@ -465,22 +465,25 @@ function removeChunk(world, i, j, k) {
 // changed block in their 1-block padding)
 
 function _updateChunkAndBorders(world, i, j, k, size, x, y, z, val) {
-    var ilocs = [0]
-    var jlocs = [0]
-    var klocs = [0]
-    if (x === 0) { ilocs.push(-1) } else if (x === size - 1) { ilocs.push(1) }
-    if (y === 0) { jlocs.push(-1) } else if (y === size - 1) { jlocs.push(1) }
-    if (z === 0) { klocs.push(-1) } else if (z === size - 1) { klocs.push(1) }
+    // weird nested loops to update the modified chunk, and also
+    // any neighbors whose border padding was modified
+    var imin = (x === 0) ? -1 : 0
+    var imax = (x === size - 1) ? 1 : 0
+    var jmin = (y === 0) ? -1 : 0
+    var jmax = (y === size - 1) ? 1 : 0
+    var kmin = (z === 0) ? -1 : 0
+    var kmax = (z === size - 1) ? 1 : 0
 
-    for (var di of ilocs) {
-        var lx = [size, x, -1][di + 1]
-        for (var dj of jlocs) {
-            var ly = [size, y, -1][dj + 1]
-            for (var dk of klocs) {
-                var lz = [size, z, -1][dk + 1]
+    for (var di = imin; di <= imax; di++) {
+        var lx = (di === 0) ? x : (di === -1) ? size : -1
+        for (var dj = jmin; dj <= jmax; dj++) {
+            var ly = (dj === 0) ? y : (dj === -1) ? size : -1
+            for (var dk = kmin; dk <= kmax; dk++) {
+                var lz = (dk === 0) ? z : (dk === -1) ? size : -1
+                var isPadding = !!(di || dj || dk)
                 _modifyBlockData(world,
                     i + di, j + dj, k + dk,
-                    lx, ly, lz, val)
+                    lx, ly, lz, val, isPadding)
             }
         }
     }
@@ -490,12 +493,12 @@ function _updateChunkAndBorders(world, i, j, k, size, x, y, z, val) {
 
 // internal function to modify a chunk's block
 
-function _modifyBlockData(world, i, j, k, x, y, z, val) {
+function _modifyBlockData(world, i, j, k, x, y, z, val, isPadding) {
     var chunk = getChunk(world, i, j, k)
     if (!chunk) return
-    chunk.set(x, y, z, val)
+    chunk.set(x, y, z, val, isPadding)
     enqueueID(chunk.id, world._chunkIDsToMeshFirst)
-    world.emit('chunkChanged', chunk)
+    if (!isPadding) world.emit('chunkChanged', chunk)
 }
 
 
@@ -503,9 +506,6 @@ function _modifyBlockData(world, i, j, k, x, y, z, val) {
 
 // rebuild queue of chunks to be added around (ci,cj,ck)
 function buildChunkAddQueue(world, ci, cj, ck) {
-
-    // TODO: make this more sane
-
     var add = Math.ceil(world.chunkAddDistance)
     var pending = world._chunkIDsToCreate
     var queue = []
@@ -518,14 +518,15 @@ function buildChunkAddQueue(world, ci, cj, ck) {
                 var di = i - ci
                 var dj = j - cj
                 var dk = k - ck
-                var distSq = di * di + dj * dj + dk * dk
-                if (distSq > addDistSq) continue
+                var horizDistSq = di * di + dk * dk
+                var totalDistSq = horizDistSq + dj * dj
+                if (totalDistSq > addDistSq) continue
 
                 if (getChunk(world, i, j, k)) continue
                 var id = getChunkID(i, j, k)
                 if (pending.indexOf(id) > -1) continue
                 queue.push(id)
-                distArr.push(distSq)
+                distArr.push(horizDistSq + Math.abs(dj))
             }
         }
     }
@@ -658,5 +659,3 @@ if (PROFILE_QUEUES)(function () {
 import { makeProfileHook } from './util'
 var profile_hook = (PROFILE) ?
     makeProfileHook(200, 'world ticks') : () => {}
-
-
