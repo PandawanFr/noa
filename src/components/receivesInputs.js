@@ -40,8 +40,8 @@ export default function (noa) {
 function setMovementState(state, inputs, camHeading) {
     state.jumping = !!inputs.jump
 
-    var fb = inputs.forward ? (inputs.backward ? 0 : 1) : (inputs.backward ? -1 : 0)
-    var rl = inputs.right ? (inputs.left ? 0 : 1) : (inputs.left ? -1 : 0)
+    var fb = (inputs.forward ? 1 : 0) + (inputs.backward ? -1 : 0)
+    var rl = (inputs.right ? 1 : 0) + (inputs.left ? -1 : 0)
 
     if ((fb | rl) === 0) {
         state.running = false

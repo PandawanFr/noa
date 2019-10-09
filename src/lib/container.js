@@ -10,13 +10,13 @@ export default function (noa, opts) {
 }
 
 /**
- * @class
+ * @constructor Container
  * @typicalname noa.container
  * @emits DOMready
  * @classdesc Wraps `game-shell` module 
  * and manages HTML container, canvas, etc.
+ * @extends {EventEmitter}
  */
-
 function Container(noa, opts) {
     opts = opts || {}
     this._noa = noa
@@ -32,17 +32,17 @@ function Container(noa, opts) {
 
     // basic listeners
     var self = this
-    var lockChange = function (ev) { onLockChange(self, ev) }
+    var lockChange = (ev) => { onLockChange(self, ev) }
     document.addEventListener("pointerlockchange", lockChange, false)
     document.addEventListener("mozpointerlockchange", lockChange, false)
     document.addEventListener("webkitpointerlockchange", lockChange, false)
     detectPointerLock(self)
 
-    self.element.addEventListener('mouseenter', function () { self.pointerInGame = true })
-    self.element.addEventListener('mouseleave', function () { self.pointerInGame = false })
+    self.element.addEventListener('mouseenter', () => { self.pointerInGame = true })
+    self.element.addEventListener('mouseleave', () => { self.pointerInGame = false })
 
-    window.addEventListener('focus', function () { self.isFocused = true })
-    window.addEventListener('blur', function () { self.isFocused = false })
+    window.addEventListener('focus', () => { self.isFocused = true })
+    window.addEventListener('blur', () => { self.isFocused = false })
 
     // get shell events after it's initialized
     this._shell.on('init', onShellInit.bind(null, this))
@@ -175,7 +175,7 @@ function detectPointerLock(self) {
         ('webkitPointerLockElement' in document)
     if (lockElementExists) {
         self.supportsPointerLock = true
-        var listener = function (e) {
+        var listener = (e) => {
             self.supportsPointerLock = false
             document.removeEventListener(e.type, listener)
         }

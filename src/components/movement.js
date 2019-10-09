@@ -112,7 +112,7 @@ function applyMovementPhysics(dt, state, body) {
     if (state.running) {
 
         var speed = state.maxSpeed
-        speed *=  state.moveEffectMult;
+        speed *=  state.moveEffectMult
         // todo: add crouch/sprint modifiers if needed
         // if (state.sprint) speed *= state.sprintMoveMult
         // if (state.crouch) speed *= state.crouchMoveMult

@@ -29,7 +29,7 @@ export function makeProfileHook(_every, _title) {
     var total = 0
     var clearNext = true
 
-    var start = function () {
+    var start = () => {
         if (clearNext) {
             times.length = names.length = 0
             clearNext = false
@@ -37,7 +37,7 @@ export function makeProfileHook(_every, _title) {
         started = last = performance.now()
         iter++
     }
-    var add = function (name) {
+    var add = (name) => {
         var t = performance.now()
         if (names.indexOf(name) < 0) names.push(name)
         var i = names.indexOf(name)
@@ -45,11 +45,11 @@ export function makeProfileHook(_every, _title) {
         times[i] += t - last
         last = t
     }
-    var report = function () {
+    var report = () => {
         total += performance.now() - started
         if (iter === every) {
             var head = title + ' total ' + (total / every).toFixed(2) + 'ms (avg, ' + every + ' runs)    '
-            console.log(head, names.map(function (name, i) {
+            console.log(head, names.map((name, i) => {
                 return name + ': ' + (times[i] / every).toFixed(2) + 'ms    '
             }).join(''))
             clearNext = true

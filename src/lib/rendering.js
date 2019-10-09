@@ -45,11 +45,10 @@ var defaults = {
 
 
 /**
- * @class
+ * @constructor Rendering
  * @typicalname noa.rendering
  * @classdesc Manages all rendering, and the BABYLON scene, materials, etc.
  */
-
 function Rendering(noa, opts, canvas) {
     this.noa = noa
 
@@ -159,7 +158,7 @@ Rendering.prototype.getScene = function () {
 }
 
 // per-tick listener for rendering-related stuff
-Rendering.prototype.tick = function (dt) {
+Rendering.prototype.tick = (dt) => {
     // nothing here at the moment
 }
 
@@ -484,21 +483,21 @@ Rendering.prototype.debug_SceneCheck = function () {
         if (mat.subMaterials) mat.subMaterials.forEach(mat => allmats.push(mat))
         else allmats.push(mat)
     })
-    this._octree.blocks.forEach(function (block) {
+    this._octree.blocks.forEach((block) => {
         numOcts++
         block.entries.forEach(m => octs.push(m))
     })
-    meshes.forEach(function (m) {
+    meshes.forEach((m) => {
         if (m._isDisposed) warn(m, 'disposed mesh in scene')
         if (empty(m)) return
         if (missing(m, dyns, octs)) warn(m, 'non-empty mesh missing from octree')
         if (!m.material) { warn(m, 'non-empty scene mesh with no material'); return }
-        (m.material.subMaterials || [m.material]).forEach(function (mat) {
+        (m.material.subMaterials || [m.material]).forEach(mat => {
             if (missing(mat, mats)) warn(mat, 'mesh material not in scene')
         })
     })
     var unusedMats = []
-    allmats.forEach(mat => {
+    allmats.forEach((mat) => {
         var used = false
         meshes.forEach(mesh => {
             if (mesh.material === mat) used = true
@@ -510,10 +509,10 @@ Rendering.prototype.debug_SceneCheck = function () {
     if (unusedMats.length) {
         console.warn('Materials unused by any mesh: ', unusedMats.join(', '))
     }
-    dyns.forEach(function (m) {
+    dyns.forEach((m) => {
         if (missing(m, meshes)) warn(m, 'octree/dynamic mesh not in scene')
     })
-    octs.forEach(function (m) {
+    octs.forEach((m) => {
         if (missing(m, meshes)) warn(m, 'octree block mesh not in scene')
     })
     var avgPerOct = Math.round(10 * octs.length / numOcts) / 10
@@ -559,7 +558,7 @@ var profile_hook = (PROFILE) ?
 
 
 
-var fps_hook = function () {}
+var fps_hook = () => {}
 
 function setUpFPS() {
     var div = document.createElement('div')
@@ -575,7 +574,7 @@ function setUpFPS() {
     var longest = 0
     var start = performance.now()
     var last = start
-    fps_hook = function () {
+    fps_hook = () => {
         ct++
         var nt = performance.now()
         if (nt - last > longest) longest = nt - last

@@ -33,12 +33,14 @@ function ObjMeshDat(id, x, y, z) {
  * 
  */
 
-
+/**
+ * @constructor ObjectMesher
+ */
 function ObjectMesher() {
 
 
     // adds properties to the new chunk that will be used when processing
-    this.initChunk = function (chunk) {
+    this.initChunk = (chunk) => {
         chunk._objectBlocks = {}
         chunk._objectSystems = []
     }
@@ -52,12 +54,12 @@ function ObjectMesher() {
 
 
     // accessors for the chunk to regester as object voxels are set/unset
-    this.addObjectBlock = function (chunk, id, x, y, z) {
+    this.addObjectBlock = (chunk, id, x, y, z) => {
         var key = x + '|' + y + '|' + z
         chunk._objectBlocks[key] = new ObjMeshDat(id, x, y, z, null)
     }
 
-    this.removeObjectBlock = function (chunk, x, y, z) {
+    this.removeObjectBlock = (chunk, x, y, z) => {
         var key = x + '|' + y + '|' + z
         if (chunk._objectBlocks[key]) delete chunk._objectBlocks[key]
     }
@@ -71,7 +73,7 @@ function ObjectMesher() {
      * 
      */
 
-    this.removeObjectMeshes = function (chunk) {
+    this.removeObjectMeshes = (chunk) => {
         // remove the current (if any) sps/mesh
         var systems = chunk._objectSystems || []
         while (systems.length) {
@@ -81,7 +83,7 @@ function ObjectMesher() {
         }
     }
 
-    this.buildObjectMeshes = function (chunk) {
+    this.buildObjectMeshes = (chunk) => {
         profile_hook('start')
 
         var scene = chunk.noa.rendering.getScene()
@@ -158,7 +160,7 @@ function ObjectMesher() {
             var handlerFn
             var handlers = blockHandlerLookup[blockID]
             if (handlers) handlerFn = handlers.onCustomMeshCreate
-            var setShape = function (particle, partIndex, shapeIndex) {
+            var setShape = (particle, partIndex, shapeIndex) => {
                 var key = blockArr[shapeIndex]
                 var dat = blockHash[key]
 

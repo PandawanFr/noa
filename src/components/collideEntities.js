@@ -56,7 +56,7 @@ export default function (noa) {
             intervals.length = states.length
 
             // run the intersect library
-            boxIntersect(intervals, function (a, b) {
+            boxIntersect(intervals, (a, b) => {
                 var stateA = states[a]
                 var stateB = states[b]
                 var intervalA = intervals[a]

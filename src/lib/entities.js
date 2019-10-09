@@ -23,7 +23,7 @@ var defaults = {
 
 
 /**
- * @class Entities
+ * @constructor Entities
  * @typicalname noa.ents
  * @classdesc Wrangles entities. Aliased as `noa.ents`.
  * @extends {EntComp}
@@ -67,7 +67,7 @@ function Entities(noa, opts) {
 
     // decorate the entities object with accessor functions
     /** @param id */
-    this.isPlayer = function (id) { return id === noa.playerEntity }
+    this.isPlayer = (id) => { return id === noa.playerEntity }
 
     /** @param id */
     this.hasPhysics = this.getComponentAccessor(this.names.physics)
@@ -87,17 +87,17 @@ function Entities(noa, opts) {
     this.getPositionData = getPos
 
     /** @param id */
-    this._localGetPosition = function (id) {
+    this._localGetPosition = (id) => {
         return getPos(id)._localPosition
     }
 
     /** @param id */
-    this.getPosition = function (id) {
+    this.getPosition = (id) => {
         return getPos(id).position
     }
 
     /** @param id */
-    this._localSetPosition = function (id, pos) {
+    this._localSetPosition = (id, pos) => {
         var posDat = getPos(id)
         vec3.copy(posDat._localPosition, pos)
         updateDerivedPositionData(id, posDat)
@@ -113,7 +113,7 @@ function Entities(noa, opts) {
     }
 
     /** @param id, xs, ys, zs */
-    this.setEntitySize = function (id, xs, ys, zs) {
+    this.setEntitySize = (id, xs, ys, zs) => {
         var posDat = getPos(id)
         posDat.width = (xs + zs) / 2
         posDat.height = ys
@@ -142,7 +142,7 @@ function Entities(noa, opts) {
     // physics
     var getPhys = this.getStateAccessor(this.names.physics)
     this.getPhysics = getPhys
-    this.getPhysicsBody = function (id) { return getPhys(id).body }
+    this.getPhysicsBody = (id) => { return getPhys(id).body }
 
     // misc
     this.getMeshData = this.getStateAccessor(this.names.mesh)
@@ -151,7 +151,7 @@ function Entities(noa, opts) {
     this.getCollideEntities = this.getStateAccessor(this.names.collideEntities)
 
     // pairwise collideEntities event - this is for client to override
-    this.onPairwiseEntityCollision = function (id1, id2) {}
+    this.onPairwiseEntityCollision = (id1, id2) => {}
 }
 
 // inherit from EntComp
@@ -179,7 +179,11 @@ Entities.prototype.addComponentAgain = function (id, name, state) {
 }
 
 
-/** @param x,y,z */
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
 Entities.prototype.isTerrainBlocked = function (x, y, z) {
     // checks if terrain location is blocked by entities
     var off = this.noa.worldOriginOffset
@@ -315,7 +319,7 @@ Entities.prototype.add = function (position, width, height, // required
 
         // handler for physics engine to call on auto-step
         var smoothName = this.names.smoothCamera
-        body.onStep = function () {
+        body.onStep = () => {
             self.addComponentAgain(eid, smoothName)
         }
     }

@@ -23,12 +23,10 @@ var defaults = {
 
 
 /** 
- * @class
+ * @constructor Camera
  * @typicalname noa.camera
  * @classdesc Manages the camera, exposes camera position, direction, mouse sensitivity.
  */
-
-
 function Camera(noa, opts) {
     this.noa = noa
 

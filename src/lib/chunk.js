@@ -33,12 +33,9 @@ var OBJECT_BIT = constants.OBJECT_BIT
 
 
 
-/*
- *
- *    Chunk constructor
- *
+/**
+ * @constructor Chunk
  */
-
 function Chunk(noa, id, i, j, k, size) {
     this.id = id
 

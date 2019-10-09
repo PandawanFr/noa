@@ -22,7 +22,7 @@ var defaultOptions = {
 }
 
 /**
- * @class
+ * @constructor
  * @typicalname noa.world
  * @emits worldDataNeeded(id, ndarray, x, y, z)
  * @emits chunkAdded(chunk)
@@ -30,10 +30,8 @@ var defaultOptions = {
  * @emits chunkBeingRemoved(id, ndarray, userData)
  * @emits chunkMeshUpdated(chunk) Called when the chunk's mesh has been updated
  * @classdesc Manages the world and its chunks
- * 
- * Extends `EventEmitter`
+ * @extends {EventEmitter}
  */
-
 function World(noa, opts) {
     this.noa = noa
     opts = Object.assign({}, defaultOptions, opts)
@@ -63,7 +61,7 @@ function World(noa, opts) {
 
     // triggers a short visit to the meshing queue before renders
     var self = this
-    noa.on('beforeRender', function () { beforeRender(self) })
+    noa.on('beforeRender', () => { beforeRender(self) })
 
     // actual chunk storage - hash size hard coded for now
     this._chunkHash = ndHash([1024, 1024, 1024])
@@ -96,7 +94,11 @@ var worldCoordToChunkIndex
 
 
 
-/** @param x,y,z */
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
 World.prototype.getBlockID = function (x, y, z) {
     var chunk = this._getChunkByCoords(x, y, z)
     if (!chunk) return 0
@@ -107,7 +109,11 @@ World.prototype.getBlockID = function (x, y, z) {
     return chunk.get(ix, iy, iz)
 }
 
-/** @param x,y,z */
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
 World.prototype.getBlockSolidity = function (x, y, z) {
     var chunk = this._getChunkByCoords(x, y, z)
     if (!chunk) return 0
@@ -118,25 +124,41 @@ World.prototype.getBlockSolidity = function (x, y, z) {
     return !!chunk.getSolidityAt(ix, iy, iz)
 }
 
-/** @param x,y,z */
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
 World.prototype.getBlockOpacity = function (x, y, z) {
     var id = this.getBlockID(x, y, z)
     return this.noa.registry.getBlockOpacity(id)
 }
 
-/** @param x,y,z */
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
 World.prototype.getBlockFluidity = function (x, y, z) {
     var id = this.getBlockID(x, y, z)
     return this.noa.registry.getBlockFluidity(id)
 }
 
-/** @param x,y,z */
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
 World.prototype.getBlockProperties = function (x, y, z) {
     var id = this.getBlockID(x, y, z)
     return this.noa.registry.getBlockProps(id)
 }
 
-/** @param x,y,z */
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
 World.prototype.getBlockObjectMesh = function (x, y, z) {
     var chunk = this._getChunkByCoords(x, y, z)
     if (!chunk) return 0
@@ -148,7 +170,11 @@ World.prototype.getBlockObjectMesh = function (x, y, z) {
 }
 
 
-/** @param x,y,z */
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
 World.prototype.setBlockID = function (val, x, y, z) {
     var i = worldCoordToChunkCoord(x)
     var j = worldCoordToChunkCoord(y)
@@ -162,7 +188,11 @@ World.prototype.setBlockID = function (val, x, y, z) {
 }
 
 
-/** @param x,y,z */
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
 World.prototype.isBoxUnobstructed = function (box) {
     var base = box.base
     var max = box.max
@@ -589,14 +619,14 @@ function unenqueueID(id, queue) {
 
 
 
-var profile_queues = function (w, s) {}
-if (PROFILE_QUEUES)(function () {
+var profile_queues = (w, s) => {}
+if (PROFILE_QUEUES)(() => {
     var every = 100
     var iter = 0
     var t, nrem, nreq, totalrec, nmesh
     var reqcts, remcts, meshcts
     var qadd, qrem, qmem, qgen, qmesh
-    profile_queues = function (world, state) {
+    profile_queues = (world, state) => {
         if (state === 'start') {
             if (iter === 0) {
                 t = performance.now()
@@ -647,8 +677,8 @@ if (PROFILE_QUEUES)(function () {
             }
         }
     }
-    var sum = function (num, prev) { return num + prev }
-    var rnd = function (n) { return Math.round(n * 10) / 10 }
+    var sum = (num, prev) => { return num + prev }
+    var rnd = n => { return Math.round(n * 10) / 10 }
 })()
 
 

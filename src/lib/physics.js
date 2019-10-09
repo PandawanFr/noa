@@ -9,19 +9,17 @@ export default function (noa, opts) {
 }
 
 
-/**
- * @class Physics
- * @typicalname noa.physics
- * @classdesc Wrapper module for the physics engine. For docs see 
- * [andyhall/voxel-physics-engine](https://github.com/andyhall/voxel-physics-engine)
- */
-
-
 var defaults = {
     gravity: [0, -10, 0],
     airDrag: 0.1,
 }
 
+/**
+ * @constructor Physics
+ * @typicalname noa.physics
+ * @classdesc Wrapper module for the physics engine. For docs see 
+ * [andyhall/voxel-physics-engine](https://github.com/andyhall/voxel-physics-engine)
+ */
 
 function makePhysics(noa, opts) {
     opts = Object.assign({}, defaults, opts)

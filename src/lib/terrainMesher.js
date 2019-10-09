@@ -27,6 +27,9 @@ var PROFILE_EVERY = 0 // 100
  */
 
 
+/**
+ * @constructor TerrainMesher
+ */
 function TerrainMesher() {
 
     var greedyMesher = new GreedyMesher()
@@ -39,7 +42,7 @@ function TerrainMesher() {
      * 
      */
 
-    this.meshChunk = function (chunk, matGetter, colGetter, ignoreMaterials, useAO, aoVals, revAoVal) {
+    this.meshChunk = (chunk, matGetter, colGetter, ignoreMaterials, useAO, aoVals, revAoVal) => {
         profile_hook('start')
         var noa = chunk.noa
 
@@ -68,16 +71,13 @@ function TerrainMesher() {
 }
 
 
-
-
-/*
+/**
+ * @constructor Submesh
+ * @classdesc Holds one submesh worth of greedy-meshed data.
  * 
- *  Submesh - holds one submesh worth of greedy-meshed data
- * 
- *  Basically, the greedy mesher builds these and the mesh builder consumes them
- * 
+ * Basically, the greedy mesher builds these and the mesh builder consumes them
+ * @param {number} id 
  */
-
 function Submesh(id) {
     this.id = id | 0
     this.positions = []
@@ -102,23 +102,21 @@ Submesh.prototype.dispose = function () {
 
 
 
-/*
- * 
- *  Mesh Builder - turns an array of Submesh data into a 
- *  Babylon.js mesh/submeshes, ready to be added to the scene
- * 
+/**
+ * @constructor MeshBuilder
+ * @classdesc Turns an array of Submesh data into a 
+ * Babylon.js mesh/submeshes, ready to be added to the scene
  */
-
 function MeshBuilder() {
 
     var noa
 
     // core
-    this.build = function (chunk, meshdata, ignoreMaterials) {
+    this.build = (chunk, meshdata, ignoreMaterials) => {
         noa = chunk.noa
 
         // preprocess meshdata entries to merge those that will use default terrain material
-        var mergeCriteria = function (mdat) {
+        var mergeCriteria = (mdat) => {
             if (ignoreMaterials) return true
             if (mdat.renderMat) return false
             var url = noa.registry.getMaterialTexture(mdat.id)
@@ -145,11 +143,11 @@ function MeshBuilder() {
     // this version builds a parent mesh + child meshes, rather than
     // one big mesh with submeshes and a multimaterial.
     // This should be obsolete, unless the first one has problems..
-    this.buildWithoutMultimats = function (chunk, meshdata, ignoreMaterials) {
+    this.buildWithoutMultimats = (chunk, meshdata, ignoreMaterials) => {
         noa = chunk.noa
 
         // preprocess meshdata entries to merge those that use default terrain material
-        var mergeCriteria = function (mdat) {
+        var mergeCriteria = (mdat) => {
             if (ignoreMaterials) return true
             if (mdat.renderMat) return false
             var url = noa.registry.getMaterialTexture(mdat.id)
@@ -361,6 +359,14 @@ function MeshBuilder() {
  *        }
  */
 
+/**
+ * @constructor GreedyMesher
+ * @classdesc Greedy voxel meshing algorithm
+ *      based initially on algo by Mikola Lysenko:
+ *        http://0fps.net/2012/07/07/meshing-minecraft-part-2/
+ *        but evolved quite a bit since then
+ *      AO handling by me, stitched together out of cobwebs and dreams
+ */
 function GreedyMesher() {
 
     var ID_MASK = constants.ID_MASK
@@ -373,10 +379,31 @@ function GreedyMesher() {
     var maskCache = new Int16Array(16)
     var aomaskCache = new Uint16Array(16)
 
-
-
-
-    this.mesh = function (arr, getMaterial, getColor, doAO, aoValues, revAoVal) {
+    /**
+     * Generate mesh
+     * @param {import('ndarray')} arr 3D ndarray of dimensions X,Y,Z 
+     *  packed with solidity/opacity booleans in higher bits
+     * @param {(blockID: number, dir: number) => number} getMaterial function( blockID, dir )
+     *  returns a material ID based on block id and which cube face it is
+     *   assume for now that each mat ID should get its own mesh)
+     * @param {(materialID: number) => number[]} getColor function( materialID )
+     *  looks up a color (3-array) by material ID
+     *  TODO: replace this with a lookup array?
+     * @param {boolean} doAO whether or not to bake ambient occlusion into vertex colors
+     * @param {[number, number, number]} aoValues array[3] of color multipliers for AO (least to most occluded)
+     * @param {number} revAoVal "reverse ao" - color multiplier for unoccluded exposed edges
+     * @returns {any} // TODO: Typings
+     * Return object: array of mesh objects keyed by material ID
+     *  arr[id] = {
+     *    id:       material id for mesh
+     *    vertices: ints, range 0 .. X/Y/Z
+     *    indices:  ints
+     *    normals:  ints,   -1 .. 1
+     *    colors:   floats,  0 .. 1
+     *    uvs:      floats,  0 .. X/Y/Z
+     *  }
+     */
+    this.mesh = (arr, getMaterial, getColor, doAO, aoValues, revAoVal) => {
 
         // return object, holder for Submeshes
         var subMeshes = {}

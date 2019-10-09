@@ -89,7 +89,7 @@ var defaults = {
  * @emits targetBlockChanged(blockDesc)
  * @classdesc Root class of the noa engine
  * 
- * Extends: `EventEmitter`
+ * @extends {EventEmitter}
  */
 
 function Engine(opts) {
@@ -121,43 +121,36 @@ function Engine(opts) {
 
     /**
      * container (html/div) manager
-     * @type {Container}
      */
     this.container = createContainer(this, opts)
 
     /**
      * inputs manager - abstracts key/mouse input
-     * @type {Inputs}
      */
     this.inputs = createInputs(this, opts, this.container.element)
 
     /**
      * block/item property registry
-     * @type {Registry}
      */
     this.registry = createRegistry(this, opts)
 
     /**
      * world manager
-     * @type {World}
      */
     this.world = createWorld(this, opts)
 
     /**
      * Rendering manager
-     * @type {Rendering}
      */
     this.rendering = createRendering(this, opts, this.container.canvas)
 
     /**
      * physics engine - solves collisions, properties, etc.
-     * @type {Physics}
      */
     this.physics = createPhysics(this, opts)
 
     /** Entity manager / Entity Component System (ECS) 
      * Aliased to `noa.ents` for convenience.
-     * @type {Entities}
      */
     this.entities = createEntities(this, opts)
     this.ents = this.entities
@@ -196,7 +189,6 @@ function Engine(opts) {
 
     /**
      * Manages camera, view angle, etc.
-     * @type {Camera}
      */
     this.camera = createCamera(this, opts)
 
@@ -224,7 +216,7 @@ function Engine(opts) {
     // add a default block highlighting function
     if (!opts.skipDefaultHighlighting) {
         // the default listener, defined onto noa in case people want to remove it later
-        this.defaultBlockHighlightFunction = function (tgt) {
+        this.defaultBlockHighlightFunction = (tgt) => {
             if (tgt) {
                 self.rendering.highlightBlockFace(true, tgt.position, tgt.normal)
             } else {
@@ -468,7 +460,11 @@ Engine.prototype.setPaused = function (paused) {
     }
 }
 
-/** @param x,y,z */
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
 Engine.prototype.getBlock = function (x, y, z) {
     if (x.length) {
         return this.world.getBlockID(x[0], x[1], x[2])
@@ -477,7 +473,11 @@ Engine.prototype.getBlock = function (x, y, z) {
     }
 }
 
-/** @param x,y,z */
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
 Engine.prototype.setBlock = function (id, x, y, z) {
     // skips the entity collision check
     if (x.length) {
@@ -551,7 +551,7 @@ Engine.prototype._localPick = function (pos, vec, dist, blockIdTestFunction) {
     var testFn = blockIdTestFunction || this.registry.getBlockTargetability
     var world = this.world
     var off = this.worldOriginOffset
-    var testVoxel = function (x, y, z) {
+    var testVoxel = (x, y, z) => {
         var id = world.getBlockID(x + off[0], y + off[1], z + off[2])
         return testFn(id)
     }

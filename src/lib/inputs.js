@@ -10,7 +10,7 @@ export default function (noa, opts, element) {
 
 
 /**
- * @class Inputs
+ * @constructor Inputs
  * @typicalname noa.inputs
  * @classdesc Abstracts key/mouse input. 
  * For docs see [andyhall/game-inputs](https://github.com/andyhall/game-inputs)

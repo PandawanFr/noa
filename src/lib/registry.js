@@ -39,12 +39,10 @@ var MAX_BLOCK_IDS = 255 // currently stored in chunks as int8
 
 
 /**
- * @class
+ * @constructor Registry
  * @typicalname noa.registry
  * @classdesc for registering block types, materials & properties
  */
-
-
 function Registry(noa, opts) {
     this.noa = noa
     opts = Object.assign({}, defaults, opts)
@@ -193,7 +191,7 @@ function Registry(noa, opts) {
      * @param renderMaterial an optional BABYLON material to be used for block faces with this block material
      */
 
-    this.registerMaterial = function (name, color, textureURL, texHasAlpha, renderMaterial) {
+    this.registerMaterial = (name, color, textureURL, texHasAlpha, renderMaterial) => {
         // console.log('register mat: ', name, color, textureURL)
         var id = matIDs[name] || matData.length
         matIDs[name] = id
@@ -221,11 +219,11 @@ function Registry(noa, opts) {
      * block solidity (as in physics) 
      * @param id
      */
-    this.getBlockSolidity = function (id) {
+    this.getBlockSolidity = (id) => {
         return blockSolidity[id]
     }
 
-    this.getBlockTargetability = function (id) {
+    this.getBlockTargetability = (id) => {
         return blockTargetablility[id]
     }
 
@@ -234,7 +232,7 @@ function Registry(noa, opts) {
      * can be partially seen through (like a fencepost, etc)
      * @param id
      */
-    this.getBlockOpacity = function (id) {
+    this.getBlockOpacity = (id) => {
         return blockOpacity[id]
     }
 
@@ -242,7 +240,7 @@ function Registry(noa, opts) {
      * block is fluid or not
      * @param id
      */
-    this.getBlockFluidity = function (id) {
+    this.getBlockFluidity = (id) => {
         return blockIsFluid[id]
     }
 
@@ -250,13 +248,13 @@ function Registry(noa, opts) {
      * Get block property object passed in at registration
      * @param id
      */
-    this.getBlockProps = function (id) {
+    this.getBlockProps = (id) => {
         return blockProps[id]
     }
 
     // look up a block ID's face material
     // dir is a value 0..5: [ +x, -x, +y, -y, +z, -z ]
-    this.getBlockFaceMaterial = function (blockId, dir) {
+    this.getBlockFaceMaterial = (blockId, dir) => {
         return blockMats[blockId * 6 + dir]
     }
 
@@ -265,17 +263,17 @@ function Registry(noa, opts) {
 
 
     // look up material color given ID
-    this.getMaterialColor = function (matID) {
+    this.getMaterialColor = (matID) => {
         return matData[matID].color
     }
 
     // look up material texture given ID
-    this.getMaterialTexture = function (matID) {
+    this.getMaterialTexture = (matID) => {
         return matData[matID].texture
     }
 
     // look up material's properties: color, alpha, texture, textureAlpha
-    this.getMaterialData = function (matID) {
+    this.getMaterialData = (matID) => {
         return matData[matID]
     }
 
@@ -303,7 +301,7 @@ function Registry(noa, opts) {
 
     // look up color used for vertices of blocks of given material
     // - i.e. white if it has a texture, color otherwise
-    this._getMaterialVertexColor = function (matID) {
+    this._getMaterialVertexColor = (matID) => {
         if (matData[matID].texture) return white
         return matData[matID].color
     }
